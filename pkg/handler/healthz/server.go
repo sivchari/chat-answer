@@ -10,8 +10,7 @@ import (
 	"github.com/sivchari/chat-answer/proto/proto/protoconnect"
 )
 
-type server struct {
-}
+type server struct{}
 
 func NewServer() protoconnect.HealthzHandler {
 	return &server{}
