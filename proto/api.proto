@@ -1,0 +1,16 @@
+syntax = "proto3";
+option go_package = "github.com/sivchari/chat-answer/proto";
+package api;
+
+service Healthz {
+    rpc Check (CheckRequest) returns (CheckResponse) {};
+}
+
+message CheckRequest {
+    string name = 1;
+}
+
+message CheckResponse {
+    string msg = 1;
+}
+

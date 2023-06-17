@@ -1,0 +1,12 @@
+version: v1
+managed: # managed mode を使用
+  enabled: true
+  go_package_prefix:
+    default: "github.com/sivchari/chat-answer/proto"
+plugins:
+  - name: go # protoc-gen-go
+    out: proto
+    opt: paths=source_relative
+  - name: connect-go # protoc-gen-connect-go
+    out: proto
+    opt: paths=source_relative
