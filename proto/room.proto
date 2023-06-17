@@ -1,20 +1,28 @@
 syntax = "proto3";
-option go_package = "github.com/sivchari/chat-answer/proto";
 package api;
 
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/sivchari/chat-answer/proto";
+
 service RoomService {
-    rpc CreateRoom (CreateRoomRequest) returns (CreateRoomResponse) {};
+  rpc CreateRoom(CreateRoomRequest) returns (CreateRoomResponse) {}
+  rpc ListRooms(google.protobuf.Empty) returns (ListRoomsResponse) {}
 }
 
 message CreateRoomRequest {
-    Room room = 1;
+  Room room = 1;
 }
 
 message CreateRoomResponse {
-    Room room = 1;
+  Room room = 1;
+}
+
+message ListRoomsResponse {
+  repeated Room rooms = 1;
 }
 
 message Room {
-    string id = 1;
-    string name = 2;
+  string id = 1;
+  string name = 2;
 }

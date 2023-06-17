@@ -8,6 +8,7 @@ import (
 
 type RoomRepository interface {
 	CreateRoom(room *entity.Room) (*entity.Room, error)
+	ListRooms() ([]*entity.Room, error)
 }
 
 type RoomRepositoryImpl struct {
@@ -26,4 +27,15 @@ func (r *RoomRepositoryImpl) CreateRoom(room *entity.Room) (*entity.Room, error)
 
 	store[room.GetId()] = room
 	return room, nil
+}
+
+func (r *RoomRepositoryImpl) ListRooms() ([]*entity.Room, error) {
+	mu.Lock()
+	defer mu.Unlock()
+
+	var rooms []*entity.Room
+	for _, room := range store {
+		rooms = append(rooms, room)
+	}
+	return rooms, nil
 }
