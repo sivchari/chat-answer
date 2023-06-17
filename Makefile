@@ -17,3 +17,7 @@ buf: ## Generate protobuf codes.
 	goimports -w -local "github.com/sivchari/chat-answer" proto/proto
 	@echo proto formatting...
 	@docker compose run --rm buf format proto -d -w > /dev/null
+
+.PHONY: run-api
+run-api: ## Serve api
+	docker compose up api -d --build
