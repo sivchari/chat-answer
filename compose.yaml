@@ -1,6 +1,16 @@
 version: "3"
 
 services:
+  api:
+    build:
+      context: .
+      dockerfile: build/api/Dockerfile
+      args:
+        - GO_VERSION=1.20.5
+    volumes:
+      - ./:/go/src/github.com/sivchari/chat-answer
+    ports:
+      - "8080:8080"
   buf:
     build:
       context: .
