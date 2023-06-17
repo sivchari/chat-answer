@@ -15,8 +15,13 @@ type CreateRoomResponse struct {
 	Room *entity.Room
 }
 
+type ListRoomsResponse struct {
+	Rooms []*entity.Room
+}
+
 type RoomUC interface {
 	CreateRoom(ctx context.Context, request *CreateRoomRequest) (*CreateRoomResponse, error)
+	ListRooms(ctx context.Context) (*ListRoomsResponse, error)
 }
 
 type RoomUCImpl struct {
@@ -28,6 +33,13 @@ func (uc *RoomUCImpl) CreateRoom(ctx context.Context, request *CreateRoomRequest
 	if err != nil {
 		return nil, err
 	}
-
 	return &CreateRoomResponse{room}, nil
+}
+
+func (uc *RoomUCImpl) ListRooms(ctx context.Context) (*ListRoomsResponse, error) {
+	rooms, err := uc.RoomRepo.ListRooms()
+	if err != nil {
+		return nil, err
+	}
+	return &ListRoomsResponse{Rooms: rooms}, nil
 }

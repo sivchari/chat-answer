@@ -7,10 +7,13 @@ package protoconnect
 import (
 	context "context"
 	errors "errors"
-	connect_go "github.com/bufbuild/connect-go"
-	proto "github.com/sivchari/chat-answer/proto/proto"
 	http "net/http"
 	strings "strings"
+
+	connect_go "github.com/bufbuild/connect-go"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
+
+	proto "github.com/sivchari/chat-answer/proto/proto"
 )
 
 // This is a compile-time assertion to ensure that this generated file and the connect package are
@@ -35,11 +38,14 @@ const (
 const (
 	// RoomServiceCreateRoomProcedure is the fully-qualified name of the RoomService's CreateRoom RPC.
 	RoomServiceCreateRoomProcedure = "/api.RoomService/CreateRoom"
+	// RoomServiceListRoomsProcedure is the fully-qualified name of the RoomService's ListRooms RPC.
+	RoomServiceListRoomsProcedure = "/api.RoomService/ListRooms"
 )
 
 // RoomServiceClient is a client for the api.RoomService service.
 type RoomServiceClient interface {
 	CreateRoom(context.Context, *connect_go.Request[proto.CreateRoomRequest]) (*connect_go.Response[proto.CreateRoomResponse], error)
+	ListRooms(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[proto.ListRoomsResponse], error)
 }
 
 // NewRoomServiceClient constructs a client for the api.RoomService service. By default, it uses the
@@ -57,12 +63,18 @@ func NewRoomServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 			baseURL+RoomServiceCreateRoomProcedure,
 			opts...,
 		),
+		listRooms: connect_go.NewClient[emptypb.Empty, proto.ListRoomsResponse](
+			httpClient,
+			baseURL+RoomServiceListRoomsProcedure,
+			opts...,
+		),
 	}
 }
 
 // roomServiceClient implements RoomServiceClient.
 type roomServiceClient struct {
 	createRoom *connect_go.Client[proto.CreateRoomRequest, proto.CreateRoomResponse]
+	listRooms  *connect_go.Client[emptypb.Empty, proto.ListRoomsResponse]
 }
 
 // CreateRoom calls api.RoomService.CreateRoom.
@@ -70,9 +82,15 @@ func (c *roomServiceClient) CreateRoom(ctx context.Context, req *connect_go.Requ
 	return c.createRoom.CallUnary(ctx, req)
 }
 
+// ListRooms calls api.RoomService.ListRooms.
+func (c *roomServiceClient) ListRooms(ctx context.Context, req *connect_go.Request[emptypb.Empty]) (*connect_go.Response[proto.ListRoomsResponse], error) {
+	return c.listRooms.CallUnary(ctx, req)
+}
+
 // RoomServiceHandler is an implementation of the api.RoomService service.
 type RoomServiceHandler interface {
 	CreateRoom(context.Context, *connect_go.Request[proto.CreateRoomRequest]) (*connect_go.Response[proto.CreateRoomResponse], error)
+	ListRooms(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[proto.ListRoomsResponse], error)
 }
 
 // NewRoomServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -87,6 +105,11 @@ func NewRoomServiceHandler(svc RoomServiceHandler, opts ...connect_go.HandlerOpt
 		svc.CreateRoom,
 		opts...,
 	))
+	mux.Handle(RoomServiceListRoomsProcedure, connect_go.NewUnaryHandler(
+		RoomServiceListRoomsProcedure,
+		svc.ListRooms,
+		opts...,
+	))
 	return "/api.RoomService/", mux
 }
 
@@ -95,4 +118,8 @@ type UnimplementedRoomServiceHandler struct{}
 
 func (UnimplementedRoomServiceHandler) CreateRoom(context.Context, *connect_go.Request[proto.CreateRoomRequest]) (*connect_go.Response[proto.CreateRoomResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("api.RoomService.CreateRoom is not implemented"))
+}
+
+func (UnimplementedRoomServiceHandler) ListRooms(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[proto.ListRoomsResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("api.RoomService.ListRooms is not implemented"))
 }
