@@ -3,29 +3,20 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
 
-	"github.com/bufbuild/connect-go"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 
-	"github.com/sivchari/chat-answer/proto/proto"
 	"github.com/sivchari/chat-answer/proto/proto/protoconnect"
+	"github.com/sivchari/chat-answer/repository"
+	"github.com/sivchari/chat-answer/server"
+	"github.com/sivchari/chat-answer/usecase"
 )
-
-type HealthzService struct{}
-
-func (h *HealthzService) Check(ctx context.Context, req *connect.Request[proto.CheckRequest]) (*connect.Response[proto.CheckResponse], error) {
-	resp := &proto.CheckResponse{
-		Msg: fmt.Sprintf("Hello %s", req.Msg.Name),
-	}
-	return connect.NewResponse(resp), nil
-}
 
 func main() {
 	os.Exit(run())
@@ -37,10 +28,16 @@ func run() int {
 		ng = 1
 	)
 
-	healthzService := &HealthzService{}
+	healthzService := &server.HealthzService{}
+	roomService := &server.RoomService{
+		RoomUC: &usecase.RoomUCImpl{
+			RoomRepo: &repository.RoomRepositoryImpl{},
+		},
+	}
 
 	mux := http.NewServeMux()
 	mux.Handle(protoconnect.NewHealthzHandler(healthzService))
+	mux.Handle(protoconnect.NewRoomServiceHandler(roomService))
 	handler := h2c.NewHandler(mux, &http2.Server{})
 	srv := &http.Server{
 		Addr:    ":8080",
