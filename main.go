@@ -34,10 +34,16 @@ func run() int {
 			RoomRepo: &repository.RoomRepositoryImpl{},
 		},
 	}
+	messageService := &server.MessageService{
+		MessageUC: &usecase.MessageUCImpl{
+			MessageRepo: &repository.MessageRepositoryImpl{},
+		},
+	}
 
 	mux := http.NewServeMux()
 	mux.Handle(protoconnect.NewHealthzHandler(healthzService))
 	mux.Handle(protoconnect.NewRoomServiceHandler(roomService))
+	mux.Handle(protoconnect.NewMessageServiceHandler(messageService))
 	handler := h2c.NewHandler(mux, &http2.Server{})
 	srv := &http.Server{
 		Addr:    ":8080",

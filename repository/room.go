@@ -14,27 +14,27 @@ type RoomRepository interface {
 type RoomRepositoryImpl struct {
 }
 
-var store map[string]*entity.Room = make(map[string]*entity.Room)
-var mu sync.Mutex
+var rStore map[string]*entity.Room = make(map[string]*entity.Room)
+var rMu sync.Mutex
 
 func NewRoomRepository() *RoomRepositoryImpl {
 	return &RoomRepositoryImpl{}
 }
 
 func (r *RoomRepositoryImpl) CreateRoom(room *entity.Room) (*entity.Room, error) {
-	mu.Lock()
-	defer mu.Unlock()
+	rMu.Lock()
+	defer rMu.Unlock()
 
-	store[room.GetId()] = room
+	rStore[room.GetId()] = room
 	return room, nil
 }
 
 func (r *RoomRepositoryImpl) ListRooms() ([]*entity.Room, error) {
-	mu.Lock()
-	defer mu.Unlock()
+	rMu.Lock()
+	defer rMu.Unlock()
 
 	var rooms []*entity.Room
-	for _, room := range store {
+	for _, room := range rStore {
 		rooms = append(rooms, room)
 	}
 	return rooms, nil
