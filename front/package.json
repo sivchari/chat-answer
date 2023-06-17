@@ -1,0 +1,23 @@
+{
+  "name": "front",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.12",
+    "@types/react-dom": "^18.2.5",
+    "@vitejs/plugin-react-swc": "^3.3.2",
+    "bun-types": "^0.6.0",
+    "vite": "^4.3.9"
+  },
+  "peerDependencies": {
+    "typescript": ""
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}
