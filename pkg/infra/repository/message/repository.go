@@ -25,3 +25,15 @@ func (r *repository) Insert(_ context.Context, message *entity.Message) error {
 	r.mapByRoomID[message.RoomID] = append(r.mapByRoomID[message.RoomID], message)
 	return nil
 }
+
+func (r *repository) SelectByRoomID(_ context.Context, roomID string) ([]*entity.Message, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	messages, ok := r.mapByRoomID[roomID]
+	if !ok {
+		return []*entity.Message{}, nil
+	}
+
+	return messages, nil
+}

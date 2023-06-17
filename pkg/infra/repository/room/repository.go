@@ -2,6 +2,7 @@ package room
 
 import (
 	"context"
+	"errors"
 	"sync"
 
 	"github.com/sivchari/chat-answer/pkg/domain/entity"
@@ -26,6 +27,17 @@ func (r *repository) Insert(_ context.Context, room *entity.Room) error {
 	return nil
 }
 
+func (r *repository) Select(_ context.Context, id string) (*entity.Room, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	room, ok := r.mapByID[id]
+	if !ok {
+		return nil, errors.New("room not found")
+	}
+	return room, nil
+}
+
 func (r *repository) SelectAll(_ context.Context) ([]*entity.Room, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -34,4 +46,30 @@ func (r *repository) SelectAll(_ context.Context) ([]*entity.Room, error) {
 		rooms = append(rooms, e)
 	}
 	return rooms, nil
+}
+
+func (r *repository) InsertStream(ctx context.Context, roomID string, stream *entity.Stream) error {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	room, ok := r.mapByID[roomID]
+	if !ok {
+		return errors.New("room not found")
+	}
+
+	room.Streams[stream.ID] = stream
+	return nil
+}
+
+func (r *repository) DeleteStream(ctx context.Context, roomID string, streamID string) error {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	room, ok := r.mapByID[roomID]
+	if !ok {
+		return errors.New("room not found")
+	}
+
+	delete(room.Streams, streamID)
+	return nil
 }
