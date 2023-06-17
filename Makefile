@@ -19,5 +19,5 @@ buf: ## Generate protobuf codes.
 	@docker compose run --rm buf format proto -d -w > /dev/null
 
 .PHONY: run-api
-run-api: ## Serve api
+run-api: ## Serve api.
 	docker compose up api -d --build

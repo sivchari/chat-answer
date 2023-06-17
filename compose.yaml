@@ -4,7 +4,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: build/api/Dockerfile
+      dockerfile: docker/api/Dockerfile
       args:
         - GO_VERSION=1.20.5
     volumes:
@@ -14,7 +14,7 @@ services:
   buf:
     build:
       context: .
-      dockerfile: build/buf/Dockerfile
+      dockerfile: docker/buf/Dockerfile
       args:
         - GO_VERSION=1.20.5
     working_dir: /usr/src/chat-answer

@@ -12,10 +12,13 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 
+	"github.com/sivchari/chat-answer/pkg/handler/chat"
+	"github.com/sivchari/chat-answer/pkg/handler/healthz"
+	messagerepository "github.com/sivchari/chat-answer/pkg/infra/repository/message"
+	roomrepository "github.com/sivchari/chat-answer/pkg/infra/repository/room"
+	chatinteractor "github.com/sivchari/chat-answer/pkg/usecase/chat"
+	"github.com/sivchari/chat-answer/pkg/util"
 	"github.com/sivchari/chat-answer/proto/proto/protoconnect"
-	"github.com/sivchari/chat-answer/repository"
-	"github.com/sivchari/chat-answer/server"
-	"github.com/sivchari/chat-answer/usecase"
 )
 
 func main() {
@@ -28,22 +31,17 @@ func run() int {
 		ng = 1
 	)
 
-	healthzService := &server.HealthzService{}
-	roomService := &server.RoomService{
-		RoomUC: &usecase.RoomUCImpl{
-			RoomRepo: &repository.RoomRepositoryImpl{},
-		},
-	}
-	messageService := &server.MessageService{
-		MessageUC: &usecase.MessageUCImpl{
-			MessageRepo: &repository.MessageRepositoryImpl{},
-		},
-	}
+	// DI
+	healthzServer := healthz.NewServer()
+	ulidGenerator := util.NewUILDGenerator()
+	roomRepository := roomrepository.NewRepository()
+	messageRepository := messagerepository.NewRepository()
+	chatInteractor := chatinteractor.NewInteractor(ulidGenerator, roomRepository, messageRepository)
+	chatServer := chat.NewServer(chatInteractor)
 
 	mux := http.NewServeMux()
-	mux.Handle(protoconnect.NewHealthzHandler(healthzService))
-	mux.Handle(protoconnect.NewRoomServiceHandler(roomService))
-	mux.Handle(protoconnect.NewMessageServiceHandler(messageService))
+	mux.Handle(protoconnect.NewHealthzHandler(healthzServer))
+	mux.Handle(protoconnect.NewChatServiceHandler(chatServer))
 	handler := h2c.NewHandler(mux, &http2.Server{})
 	srv := &http.Server{
 		Addr:    ":8080",

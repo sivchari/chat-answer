@@ -5,24 +5,34 @@ import "google/protobuf/empty.proto";
 
 option go_package = "github.com/sivchari/chat-answer/proto";
 
-service RoomService {
+service ChatService {
   rpc CreateRoom(CreateRoomRequest) returns (CreateRoomResponse) {}
-  rpc ListRooms(google.protobuf.Empty) returns (ListRoomsResponse) {}
+  rpc ListRoom(google.protobuf.Empty) returns (ListRoomResponse) {}
+  rpc SendMessage(SendMessageRequest) returns (google.protobuf.Empty) {}
 }
 
 message CreateRoomRequest {
-  Room room = 1;
+  string name = 1;
 }
 
 message CreateRoomResponse {
-  Room room = 1;
+  string id = 1;
 }
 
-message ListRoomsResponse {
+message ListRoomResponse {
   repeated Room rooms = 1;
 }
 
 message Room {
   string id = 1;
   string name = 2;
+}
+
+message SendMessageRequest {
+  Message message = 1;
+}
+
+message Message {
+  string roomId = 1;
+  string text = 2;
 }
