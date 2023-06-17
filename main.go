@@ -11,10 +11,11 @@ import (
 	"time"
 
 	"github.com/bufbuild/connect-go"
-	"github.com/sivchari/chat-answer/proto/proto"
-	"github.com/sivchari/chat-answer/proto/proto/protoconnect"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
+
+	"github.com/sivchari/chat-answer/proto/proto"
+	"github.com/sivchari/chat-answer/proto/proto/protoconnect"
 )
 
 type HealthzService struct{}
