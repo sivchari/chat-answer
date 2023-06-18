@@ -7,13 +7,11 @@ package protoconnect
 import (
 	context "context"
 	errors "errors"
+	connect_go "github.com/bufbuild/connect-go"
+	proto "github.com/sivchari/chat-answer/proto/proto"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	http "net/http"
 	strings "strings"
-
-	connect_go "github.com/bufbuild/connect-go"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
-
-	proto "github.com/sivchari/chat-answer/proto/proto"
 )
 
 // This is a compile-time assertion to ensure that this generated file and the connect package are
@@ -38,6 +36,8 @@ const (
 const (
 	// ChatServiceCreateRoomProcedure is the fully-qualified name of the ChatService's CreateRoom RPC.
 	ChatServiceCreateRoomProcedure = "/api.ChatService/CreateRoom"
+	// ChatServiceGetRoomProcedure is the fully-qualified name of the ChatService's GetRoom RPC.
+	ChatServiceGetRoomProcedure = "/api.ChatService/GetRoom"
 	// ChatServiceListRoomProcedure is the fully-qualified name of the ChatService's ListRoom RPC.
 	ChatServiceListRoomProcedure = "/api.ChatService/ListRoom"
 	// ChatServiceListMessageProcedure is the fully-qualified name of the ChatService's ListMessage RPC.
@@ -49,6 +49,7 @@ const (
 // ChatServiceClient is a client for the api.ChatService service.
 type ChatServiceClient interface {
 	CreateRoom(context.Context, *connect_go.Request[proto.CreateRoomRequest]) (*connect_go.Response[proto.CreateRoomResponse], error)
+	GetRoom(context.Context, *connect_go.Request[proto.GetRoomRequest]) (*connect_go.Response[proto.GetRoomResponse], error)
 	ListRoom(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[proto.ListRoomResponse], error)
 	ListMessage(context.Context, *connect_go.Request[proto.ListMessageRequest]) (*connect_go.Response[proto.ListMessageResponse], error)
 	Chat(context.Context) *connect_go.BidiStreamForClient[proto.ChatRequest, proto.ChatResponse]
@@ -67,6 +68,11 @@ func NewChatServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 		createRoom: connect_go.NewClient[proto.CreateRoomRequest, proto.CreateRoomResponse](
 			httpClient,
 			baseURL+ChatServiceCreateRoomProcedure,
+			opts...,
+		),
+		getRoom: connect_go.NewClient[proto.GetRoomRequest, proto.GetRoomResponse](
+			httpClient,
+			baseURL+ChatServiceGetRoomProcedure,
 			opts...,
 		),
 		listRoom: connect_go.NewClient[emptypb.Empty, proto.ListRoomResponse](
@@ -90,6 +96,7 @@ func NewChatServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 // chatServiceClient implements ChatServiceClient.
 type chatServiceClient struct {
 	createRoom  *connect_go.Client[proto.CreateRoomRequest, proto.CreateRoomResponse]
+	getRoom     *connect_go.Client[proto.GetRoomRequest, proto.GetRoomResponse]
 	listRoom    *connect_go.Client[emptypb.Empty, proto.ListRoomResponse]
 	listMessage *connect_go.Client[proto.ListMessageRequest, proto.ListMessageResponse]
 	chat        *connect_go.Client[proto.ChatRequest, proto.ChatResponse]
@@ -98,6 +105,11 @@ type chatServiceClient struct {
 // CreateRoom calls api.ChatService.CreateRoom.
 func (c *chatServiceClient) CreateRoom(ctx context.Context, req *connect_go.Request[proto.CreateRoomRequest]) (*connect_go.Response[proto.CreateRoomResponse], error) {
 	return c.createRoom.CallUnary(ctx, req)
+}
+
+// GetRoom calls api.ChatService.GetRoom.
+func (c *chatServiceClient) GetRoom(ctx context.Context, req *connect_go.Request[proto.GetRoomRequest]) (*connect_go.Response[proto.GetRoomResponse], error) {
+	return c.getRoom.CallUnary(ctx, req)
 }
 
 // ListRoom calls api.ChatService.ListRoom.
@@ -118,6 +130,7 @@ func (c *chatServiceClient) Chat(ctx context.Context) *connect_go.BidiStreamForC
 // ChatServiceHandler is an implementation of the api.ChatService service.
 type ChatServiceHandler interface {
 	CreateRoom(context.Context, *connect_go.Request[proto.CreateRoomRequest]) (*connect_go.Response[proto.CreateRoomResponse], error)
+	GetRoom(context.Context, *connect_go.Request[proto.GetRoomRequest]) (*connect_go.Response[proto.GetRoomResponse], error)
 	ListRoom(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[proto.ListRoomResponse], error)
 	ListMessage(context.Context, *connect_go.Request[proto.ListMessageRequest]) (*connect_go.Response[proto.ListMessageResponse], error)
 	Chat(context.Context, *connect_go.BidiStream[proto.ChatRequest, proto.ChatResponse]) error
@@ -133,6 +146,11 @@ func NewChatServiceHandler(svc ChatServiceHandler, opts ...connect_go.HandlerOpt
 	mux.Handle(ChatServiceCreateRoomProcedure, connect_go.NewUnaryHandler(
 		ChatServiceCreateRoomProcedure,
 		svc.CreateRoom,
+		opts...,
+	))
+	mux.Handle(ChatServiceGetRoomProcedure, connect_go.NewUnaryHandler(
+		ChatServiceGetRoomProcedure,
+		svc.GetRoom,
 		opts...,
 	))
 	mux.Handle(ChatServiceListRoomProcedure, connect_go.NewUnaryHandler(
@@ -158,6 +176,10 @@ type UnimplementedChatServiceHandler struct{}
 
 func (UnimplementedChatServiceHandler) CreateRoom(context.Context, *connect_go.Request[proto.CreateRoomRequest]) (*connect_go.Response[proto.CreateRoomResponse], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("api.ChatService.CreateRoom is not implemented"))
+}
+
+func (UnimplementedChatServiceHandler) GetRoom(context.Context, *connect_go.Request[proto.GetRoomRequest]) (*connect_go.Response[proto.GetRoomResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("api.ChatService.GetRoom is not implemented"))
 }
 
 func (UnimplementedChatServiceHandler) ListRoom(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[proto.ListRoomResponse], error) {

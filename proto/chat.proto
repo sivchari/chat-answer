@@ -7,6 +7,7 @@ option go_package = "github.com/sivchari/chat-answer/proto";
 
 service ChatService {
   rpc CreateRoom(CreateRoomRequest) returns (CreateRoomResponse) {}
+  rpc GetRoom(GetRoomRequest) returns (GetRoomResponse) {}
   rpc ListRoom(google.protobuf.Empty) returns (ListRoomResponse) {}
   rpc ListMessage(ListMessageRequest) returns (ListMessageResponse) {}
   rpc Chat(stream ChatRequest) returns (stream ChatResponse) {}
@@ -18,6 +19,14 @@ message CreateRoomRequest {
 
 message CreateRoomResponse {
   string id = 1;
+}
+
+message GetRoomRequest {
+  string id = 1;
+}
+
+message GetRoomResponse {
+  Room room = 1;
 }
 
 message ListRoomResponse {

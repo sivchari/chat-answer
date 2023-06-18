@@ -7,12 +7,10 @@ package protoconnect
 import (
 	context "context"
 	errors "errors"
+	connect_go "github.com/bufbuild/connect-go"
+	proto "github.com/sivchari/chat-answer/proto/proto"
 	http "net/http"
 	strings "strings"
-
-	connect_go "github.com/bufbuild/connect-go"
-
-	proto "github.com/sivchari/chat-answer/proto/proto"
 )
 
 // This is a compile-time assertion to ensure that this generated file and the connect package are
