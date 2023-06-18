@@ -103,7 +103,13 @@ func (s *server) CreateRoom(ctx context.Context, req *connect.Request[proto.Crea
 }
 
 func (s *server) GetRoom(ctx context.Context, req *connect.Request[proto.GetRoomRequest]) (*connect.Response[proto.GetRoomResponse], error) {
-	return nil, nil
+	room, err := s.chatInteracter.GetRoom(ctx, req.Msg.GetId())
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(&proto.GetRoomResponse{
+		Room: toProtoRoom(room),
+	}), nil
 }
 
 func (s *server) ListRoom(ctx context.Context, _ *connect.Request[emptypb.Empty]) (*connect.Response[proto.ListRoomResponse], error) {
