@@ -40,15 +40,18 @@ const (
 	ChatServiceCreateRoomProcedure = "/api.ChatService/CreateRoom"
 	// ChatServiceListRoomProcedure is the fully-qualified name of the ChatService's ListRoom RPC.
 	ChatServiceListRoomProcedure = "/api.ChatService/ListRoom"
-	// ChatServiceSendMessageProcedure is the fully-qualified name of the ChatService's SendMessage RPC.
-	ChatServiceSendMessageProcedure = "/api.ChatService/SendMessage"
+	// ChatServiceListMessageProcedure is the fully-qualified name of the ChatService's ListMessage RPC.
+	ChatServiceListMessageProcedure = "/api.ChatService/ListMessage"
+	// ChatServiceChatProcedure is the fully-qualified name of the ChatService's Chat RPC.
+	ChatServiceChatProcedure = "/api.ChatService/Chat"
 )
 
 // ChatServiceClient is a client for the api.ChatService service.
 type ChatServiceClient interface {
 	CreateRoom(context.Context, *connect_go.Request[proto.CreateRoomRequest]) (*connect_go.Response[proto.CreateRoomResponse], error)
 	ListRoom(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[proto.ListRoomResponse], error)
-	SendMessage(context.Context, *connect_go.Request[proto.SendMessageRequest]) (*connect_go.Response[emptypb.Empty], error)
+	ListMessage(context.Context, *connect_go.Request[proto.ListMessageRequest]) (*connect_go.Response[proto.ListMessageResponse], error)
+	Chat(context.Context) *connect_go.BidiStreamForClient[proto.ChatRequest, proto.ChatResponse]
 }
 
 // NewChatServiceClient constructs a client for the api.ChatService service. By default, it uses the
@@ -71,9 +74,14 @@ func NewChatServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 			baseURL+ChatServiceListRoomProcedure,
 			opts...,
 		),
-		sendMessage: connect_go.NewClient[proto.SendMessageRequest, emptypb.Empty](
+		listMessage: connect_go.NewClient[proto.ListMessageRequest, proto.ListMessageResponse](
 			httpClient,
-			baseURL+ChatServiceSendMessageProcedure,
+			baseURL+ChatServiceListMessageProcedure,
+			opts...,
+		),
+		chat: connect_go.NewClient[proto.ChatRequest, proto.ChatResponse](
+			httpClient,
+			baseURL+ChatServiceChatProcedure,
 			opts...,
 		),
 	}
@@ -83,7 +91,8 @@ func NewChatServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 type chatServiceClient struct {
 	createRoom  *connect_go.Client[proto.CreateRoomRequest, proto.CreateRoomResponse]
 	listRoom    *connect_go.Client[emptypb.Empty, proto.ListRoomResponse]
-	sendMessage *connect_go.Client[proto.SendMessageRequest, emptypb.Empty]
+	listMessage *connect_go.Client[proto.ListMessageRequest, proto.ListMessageResponse]
+	chat        *connect_go.Client[proto.ChatRequest, proto.ChatResponse]
 }
 
 // CreateRoom calls api.ChatService.CreateRoom.
@@ -96,16 +105,22 @@ func (c *chatServiceClient) ListRoom(ctx context.Context, req *connect_go.Reques
 	return c.listRoom.CallUnary(ctx, req)
 }
 
-// SendMessage calls api.ChatService.SendMessage.
-func (c *chatServiceClient) SendMessage(ctx context.Context, req *connect_go.Request[proto.SendMessageRequest]) (*connect_go.Response[emptypb.Empty], error) {
-	return c.sendMessage.CallUnary(ctx, req)
+// ListMessage calls api.ChatService.ListMessage.
+func (c *chatServiceClient) ListMessage(ctx context.Context, req *connect_go.Request[proto.ListMessageRequest]) (*connect_go.Response[proto.ListMessageResponse], error) {
+	return c.listMessage.CallUnary(ctx, req)
+}
+
+// Chat calls api.ChatService.Chat.
+func (c *chatServiceClient) Chat(ctx context.Context) *connect_go.BidiStreamForClient[proto.ChatRequest, proto.ChatResponse] {
+	return c.chat.CallBidiStream(ctx)
 }
 
 // ChatServiceHandler is an implementation of the api.ChatService service.
 type ChatServiceHandler interface {
 	CreateRoom(context.Context, *connect_go.Request[proto.CreateRoomRequest]) (*connect_go.Response[proto.CreateRoomResponse], error)
 	ListRoom(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[proto.ListRoomResponse], error)
-	SendMessage(context.Context, *connect_go.Request[proto.SendMessageRequest]) (*connect_go.Response[emptypb.Empty], error)
+	ListMessage(context.Context, *connect_go.Request[proto.ListMessageRequest]) (*connect_go.Response[proto.ListMessageResponse], error)
+	Chat(context.Context, *connect_go.BidiStream[proto.ChatRequest, proto.ChatResponse]) error
 }
 
 // NewChatServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -125,9 +140,14 @@ func NewChatServiceHandler(svc ChatServiceHandler, opts ...connect_go.HandlerOpt
 		svc.ListRoom,
 		opts...,
 	))
-	mux.Handle(ChatServiceSendMessageProcedure, connect_go.NewUnaryHandler(
-		ChatServiceSendMessageProcedure,
-		svc.SendMessage,
+	mux.Handle(ChatServiceListMessageProcedure, connect_go.NewUnaryHandler(
+		ChatServiceListMessageProcedure,
+		svc.ListMessage,
+		opts...,
+	))
+	mux.Handle(ChatServiceChatProcedure, connect_go.NewBidiStreamHandler(
+		ChatServiceChatProcedure,
+		svc.Chat,
 		opts...,
 	))
 	return "/api.ChatService/", mux
@@ -144,6 +164,10 @@ func (UnimplementedChatServiceHandler) ListRoom(context.Context, *connect_go.Req
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("api.ChatService.ListRoom is not implemented"))
 }
 
-func (UnimplementedChatServiceHandler) SendMessage(context.Context, *connect_go.Request[proto.SendMessageRequest]) (*connect_go.Response[emptypb.Empty], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("api.ChatService.SendMessage is not implemented"))
+func (UnimplementedChatServiceHandler) ListMessage(context.Context, *connect_go.Request[proto.ListMessageRequest]) (*connect_go.Response[proto.ListMessageResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("api.ChatService.ListMessage is not implemented"))
+}
+
+func (UnimplementedChatServiceHandler) Chat(context.Context, *connect_go.BidiStream[proto.ChatRequest, proto.ChatResponse]) error {
+	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("api.ChatService.Chat is not implemented"))
 }

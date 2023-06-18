@@ -13,8 +13,10 @@ import (
 
 type Interactor interface {
 	CreateRoom(ctx context.Context, name string) (*entity.Room, error)
+	GetRoom(ctx context.Context, id string) (*entity.Room, error)
 	ListRoom(ctx context.Context) ([]*entity.Room, error)
 	SendMessage(ctx context.Context, roomID, text string) error
+	ListMessage(ctx context.Context, roomID string) ([]*entity.Message, error)
 }
 
 type interactor struct {
@@ -58,6 +60,14 @@ func (i *interactor) ListRoom(ctx context.Context) ([]*entity.Room, error) {
 	return rooms, nil
 }
 
+func (i *interactor) GetRoom(ctx context.Context, id string) (*entity.Room, error) {
+	room, err := i.roomRepository.Select(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return room, nil
+}
+
 func (i *interactor) SendMessage(ctx context.Context, roomID, text string) error {
 	message := &entity.Message{
 		RoomID: roomID,
@@ -67,4 +77,12 @@ func (i *interactor) SendMessage(ctx context.Context, roomID, text string) error
 		return err
 	}
 	return nil
+}
+
+func (i *interactor) ListMessage(ctx context.Context, roomID string) ([]*entity.Message, error) {
+	messages, err := i.messageRepository.SelectByRoomID(ctx, roomID)
+	if err != nil {
+		return nil, err
+	}
+	return messages, nil
 }

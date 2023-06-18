@@ -2,6 +2,7 @@ package room
 
 import (
 	"context"
+	"errors"
 	"sync"
 
 	"github.com/sivchari/chat-answer/pkg/domain/entity"
@@ -24,6 +25,17 @@ func (r *repository) Insert(_ context.Context, room *entity.Room) error {
 	defer r.mu.Unlock()
 	r.mapByID[room.ID] = room
 	return nil
+}
+
+func (r *repository) Select(_ context.Context, id string) (*entity.Room, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	room, ok := r.mapByID[id]
+	if !ok {
+		return nil, errors.New("room not found")
+	}
+	return room, nil
 }
 
 func (r *repository) SelectAll(_ context.Context) ([]*entity.Room, error) {
