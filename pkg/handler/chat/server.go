@@ -79,6 +79,18 @@ func (s *server) getStreams(roomID string) Streams {
 	return streams
 }
 
+func (s *server) existStream(roomID string, key string) bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	streams, ok := s.streamsByRoomID[roomID]
+	if !ok {
+		return false
+	}
+	_, ok = streams[key]
+	return ok
+}
+
 func (s *server) CreateRoom(ctx context.Context, req *connect.Request[proto.CreateRoomRequest]) (*connect.Response[proto.CreateRoomResponse], error) {
 	room, err := s.chatInteracter.CreateRoom(ctx, req.Msg.GetName())
 	if err != nil {
@@ -100,43 +112,15 @@ func (s *server) ListRoom(ctx context.Context, _ *connect.Request[emptypb.Empty]
 	}), nil
 }
 
-func (s *server) SendMessage(ctx context.Context, req *connect.Request[proto.SendMessageRequest]) (*connect.Response[emptypb.Empty], error) {
-	// idを元にroomを取得
-	// room, err := s.chatInteracter.GetRoom(ctx, req.Msg.GetMessage().GetRoomId())
-	// if err != nil {
-	// 	return nil, err
-	// }
+func (s *server) ListMessage(ctx context.Context, req *connect.Request[proto.ListMessageRequest]) (*connect.Response[proto.ListMessageResponse], error) {
+	messages, err := s.chatInteracter.ListMessage(ctx, req.Msg.GetRoomId())
+	if err != nil {
+		return nil, err
+	}
 
-	// for _, s := range room.Streams {
-	// 	// streamに対してsend
-	// 	if err := s.PbStream.Send(&proto.SendMessageResponse{
-	// 		Message: req.Msg.GetMessage(),
-	// 	}); err != nil {
-	// 		return nil, err
-	// 	}
-	// }
-
-	// if err := s.chatInteracter.SendMessage(ctx, req.Msg.GetMessage().GetRoomId(), req.Msg.GetMessage().GetText()); err != nil {
-	// 	return nil, err
-	// }
-	return nil, nil
-}
-
-func (s *server) ListMessages(ctx context.Context, req *connect.Request[proto.ListMessagesRequest], stream *connect.ServerStream[proto.ListMessagesResponse]) error {
-	// idを元にroomを取得
-	// room, err := s.chatInteracter.GetRoom(ctx, req.Msg.GetRoomId())
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// roomに紐づくstreamを取得
-	// for _, stream := range room.Streams {
-	// 	// streamに対してsend
-	// 	if err := stream.Send(&proto.ListMessagesResponse{
-
-	// }
-
-	return nil
+	return &connect.Response[proto.ListMessageResponse]{Msg: &proto.ListMessageResponse{
+		Messages: toProtoMessages(messages),
+	}}, nil
 }
 
 func (s *server) Chat(ctx context.Context, stream *connect.BidiStream[proto.ChatRequest, proto.ChatResponse]) error {
@@ -154,42 +138,29 @@ func (s *server) Chat(ctx context.Context, stream *connect.BidiStream[proto.Chat
 			continue
 		}
 
-		// idを元にroomを取得
 		room, err := s.chatInteracter.GetRoom(ctx, req.GetMessage().GetRoomId())
 		if err != nil {
 			return err
 		}
 
-		if req.IsJoin {
-			// roomにstreamを追加
+		joined := s.existStream(room.ID, stream.Peer().Addr)
+		if !joined {
 			sID := s.addStream(room.ID, stream)
 			defer func() {
 				s.deleteStream(room.ID, sID)
 			}()
+		}
 
-			// roomに存在するすべてのメッセージをsend
-			messages, err := s.chatInteracter.ListMessage(ctx, room.ID)
-			if err != nil {
+		streams := s.getStreams(room.ID)
+		for _, st := range streams {
+			if err := s.chatInteracter.SendMessage(ctx, req.GetMessage().GetRoomId(), req.GetMessage().GetText()); err != nil {
 				return err
 			}
 
-			for _, m := range messages {
-				stream.Send(&proto.ChatResponse{
-					Message: toProtoMessage(m),
-				})
-			}
-		} else {
-			streams := s.getStreams(room.ID)
-			for _, st := range streams {
-				if err := s.chatInteracter.SendMessage(ctx, req.GetMessage().GetRoomId(), req.GetMessage().GetText()); err != nil {
-					return err
-				}
-
-				if err := st.Send(&proto.ChatResponse{
-					Message: req.GetMessage(),
-				}); err != nil {
-					return err
-				}
+			if err := st.Send(&proto.ChatResponse{
+				Message: req.GetMessage(),
+			}); err != nil {
+				return err
 			}
 		}
 	}
@@ -221,4 +192,12 @@ func toProtoMessage(message *entity.Message) *proto.Message {
 		RoomId: message.RoomID,
 		Text:   message.Text,
 	}
+}
+
+func toProtoMessages(messages []*entity.Message) []*proto.Message {
+	ret := make([]*proto.Message, 0, len(messages))
+	for _, message := range messages {
+		ret = append(ret, toProtoMessage(message))
+	}
+	return ret
 }

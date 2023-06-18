@@ -8,8 +8,7 @@ option go_package = "github.com/sivchari/chat-answer/proto";
 service ChatService {
   rpc CreateRoom(CreateRoomRequest) returns (CreateRoomResponse) {}
   rpc ListRoom(google.protobuf.Empty) returns (ListRoomResponse) {}
-  rpc SendMessage(SendMessageRequest) returns (google.protobuf.Empty) {}
-  rpc ListMessages(ListMessagesRequest) returns (stream ListMessagesResponse) {}
+  rpc ListMessage(ListMessageRequest) returns (ListMessageResponse) {}
   rpc Chat(stream ChatRequest) returns (stream ChatResponse) {}
 }
 
@@ -30,26 +29,21 @@ message Room {
   string name = 2;
 }
 
-message SendMessageRequest {
-  Message message = 1;
-}
-
 message Message {
   string roomId = 1;
   string text = 2;
 }
 
-message ListMessagesRequest {
+message ListMessageRequest {
   string roomId = 1;
 }
 
-message ListMessagesResponse {
-  Message message = 1;
+message ListMessageResponse {
+  repeated Message messages = 1;
 }
 
 message ChatRequest {
-  bool isJoin = 1;
-  Message message = 2;
+  Message message = 1;
 }
 
 message ChatResponse {
