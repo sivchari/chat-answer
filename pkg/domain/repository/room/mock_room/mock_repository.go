@@ -50,6 +50,21 @@ func (mr *MockRepositoryMockRecorder) Insert(ctx, room interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Insert", reflect.TypeOf((*MockRepository)(nil).Insert), ctx, room)
 }
 
+// Select mocks base method.
+func (m *MockRepository) Select(ctx context.Context, id string) (*entity.Room, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Select", ctx, id)
+	ret0, _ := ret[0].(*entity.Room)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Select indicates an expected call of Select.
+func (mr *MockRepositoryMockRecorder) Select(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Select", reflect.TypeOf((*MockRepository)(nil).Select), ctx, id)
+}
+
 // SelectAll mocks base method.
 func (m *MockRepository) SelectAll(ctx context.Context) ([]*entity.Room, error) {
 	m.ctrl.T.Helper()
