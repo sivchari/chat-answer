@@ -47,29 +47,3 @@ func (r *repository) SelectAll(_ context.Context) ([]*entity.Room, error) {
 	}
 	return rooms, nil
 }
-
-func (r *repository) InsertStream(ctx context.Context, roomID string, stream *entity.Stream) error {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	room, ok := r.mapByID[roomID]
-	if !ok {
-		return errors.New("room not found")
-	}
-
-	room.Streams[stream.ID] = stream
-	return nil
-}
-
-func (r *repository) DeleteStream(ctx context.Context, roomID string, streamID string) error {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	room, ok := r.mapByID[roomID]
-	if !ok {
-		return errors.New("room not found")
-	}
-
-	delete(room.Streams, streamID)
-	return nil
-}

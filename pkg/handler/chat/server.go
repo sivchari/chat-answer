@@ -2,8 +2,9 @@ package chat
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"io"
+	"sync"
 
 	"github.com/bufbuild/connect-go"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -16,13 +17,66 @@ import (
 )
 
 type server struct {
-	chatInteracter chat.Interactor
+	chatInteracter  chat.Interactor
+	streamsByRoomID map[string]Streams
+	mu              sync.RWMutex
 }
+
+type Streams map[string]*connect.BidiStream[proto.ChatRequest, proto.ChatResponse]
 
 func NewServer(chatInteracter chat.Interactor) protoconnect.ChatServiceHandler {
 	return &server{
 		chatInteracter,
+		make(map[string]Streams, 0),
+		sync.RWMutex{},
 	}
+}
+
+func (s *server) initStreams(roomID string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.streamsByRoomID[roomID] = make(Streams, 0)
+}
+
+func (s *server) addStream(roomID string, stream *connect.BidiStream[proto.ChatRequest, proto.ChatResponse]) string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	streams, ok := s.streamsByRoomID[roomID]
+	if !ok {
+		return ""
+	}
+
+	key := stream.Peer().Addr
+	streams[key] = stream
+	s.streamsByRoomID[roomID] = streams
+
+	return key
+}
+
+func (s *server) deleteStream(roomID, key string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	streams, ok := s.streamsByRoomID[roomID]
+	if !ok {
+		return
+	}
+	delete(streams, key)
+	s.streamsByRoomID[roomID] = streams
+	return
+}
+
+func (s *server) getStreams(roomID string) Streams {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	streams, ok := s.streamsByRoomID[roomID]
+	if !ok {
+		return nil
+	}
+	return streams
 }
 
 func (s *server) CreateRoom(ctx context.Context, req *connect.Request[proto.CreateRoomRequest]) (*connect.Response[proto.CreateRoomResponse], error) {
@@ -30,6 +84,7 @@ func (s *server) CreateRoom(ctx context.Context, req *connect.Request[proto.Crea
 	if err != nil {
 		return nil, err
 	}
+	s.initStreams(room.ID)
 	return connect.NewResponse(&proto.CreateRoomResponse{
 		Id: room.ID,
 	}), nil
@@ -86,15 +141,13 @@ func (s *server) ListMessages(ctx context.Context, req *connect.Request[proto.Li
 
 func (s *server) Chat(ctx context.Context, stream *connect.BidiStream[proto.ChatRequest, proto.ChatResponse]) error {
 	for {
-		// streamから受け取る
 		req, err := stream.Receive()
-
-		if err == io.EOF {
-			return nil
-		}
-
 		if err != nil {
-			return nil
+			// stream closed
+			if errors.Is(err, io.EOF) {
+				return nil
+			}
+			return err
 		}
 
 		if req.GetMessage() == nil {
@@ -109,15 +162,9 @@ func (s *server) Chat(ctx context.Context, stream *connect.BidiStream[proto.Chat
 
 		if req.IsJoin {
 			// roomにstreamを追加
-			sID, err := s.chatInteracter.AddStream(ctx, room.ID, stream)
-			if err != nil {
-				return err
-			}
-
+			sID := s.addStream(room.ID, stream)
 			defer func() {
-				if err := s.chatInteracter.DeleteStream(ctx, room.ID, sID); err != nil {
-					fmt.Println(err)
-				}
+				s.deleteStream(room.ID, sID)
 			}()
 
 			// roomに存在するすべてのメッセージをsend
@@ -131,11 +178,14 @@ func (s *server) Chat(ctx context.Context, stream *connect.BidiStream[proto.Chat
 					Message: toProtoMessage(m),
 				})
 			}
-
 		} else {
-			// roomに紐づくstreamに対してsend
-			for _, s := range room.Streams {
-				if err := s.PbStream.Send(&proto.ChatResponse{
+			streams := s.getStreams(room.ID)
+			for _, st := range streams {
+				if err := s.chatInteracter.SendMessage(ctx, req.GetMessage().GetRoomId(), req.GetMessage().GetText()); err != nil {
+					return err
+				}
+
+				if err := st.Send(&proto.ChatResponse{
 					Message: req.GetMessage(),
 				}); err != nil {
 					return err
