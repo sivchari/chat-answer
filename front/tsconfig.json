@@ -1,21 +1,23 @@
 {
   "compilerOptions": {
-    "lib": ["ESNext"],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "module": "esnext",
-    "target": "esnext",
-    "moduleResolution": "bundler",
-    "moduleDetection": "force",
-    "allowImportingTsExtensions": true,
+    "target": "es6",
     "strict": true,
     "downlevelIteration": true,
     "skipLibCheck": true,
     "jsx": "preserve",
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "src": ["./src"]
+    },
     "allowJs": true,
     "noEmit": true,
     "types": [
-      "bun-types" // add Bun global
-    ]
+      "bun-types"
+    ],
+    "moduleResolution": "Node"
   }
 }
