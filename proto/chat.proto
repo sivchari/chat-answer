@@ -9,8 +9,9 @@ service ChatService {
   rpc CreateRoom(CreateRoomRequest) returns (CreateRoomResponse) {}
   rpc GetRoom(GetRoomRequest) returns (GetRoomResponse) {}
   rpc ListRoom(google.protobuf.Empty) returns (ListRoomResponse) {}
+  rpc JoinRoom(JoinRoomRequest) returns (stream JoinRoomResponse) {}
   rpc ListMessage(ListMessageRequest) returns (ListMessageResponse) {}
-  rpc Chat(stream ChatRequest) returns (stream ChatResponse) {}
+  rpc Chat(ChatRequest) returns (ChatResponse) {}
 }
 
 message CreateRoomRequest {
@@ -58,3 +59,12 @@ message ChatRequest {
 message ChatResponse {
   Message message = 1;
 }
+
+message JoinRoomRequest {
+  string roomId = 1;
+}
+
+message JoinRoomResponse {
+    Message message = 1;
+}
+

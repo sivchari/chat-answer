@@ -7,6 +7,7 @@ import { createPromiseClient, PromiseClient } from "@bufbuild/connect";
 
 const transport = createConnectTransport({
   baseUrl: "http://localhost:8080",
+  // generate stream http client
 });
 
 export function useClient<T extends ServiceType>(service: T): PromiseClient<T> {

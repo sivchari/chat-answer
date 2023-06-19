@@ -2,8 +2,7 @@ package chat
 
 import (
 	"context"
-	"errors"
-	"io"
+	"log"
 	"sync"
 
 	"github.com/bufbuild/connect-go"
@@ -22,7 +21,7 @@ type server struct {
 	mu              sync.RWMutex
 }
 
-type Streams map[string]*connect.BidiStream[proto.ChatRequest, proto.ChatResponse]
+type Streams map[string]*connect.ServerStream[proto.JoinRoomResponse]
 
 func NewServer(chatInteracter chat.Interactor) protoconnect.ChatServiceHandler {
 	return &server{
@@ -39,7 +38,7 @@ func (s *server) initStreams(roomID string) {
 	s.streamsByRoomID[roomID] = make(Streams, 0)
 }
 
-func (s *server) addStream(roomID string, stream *connect.BidiStream[proto.ChatRequest, proto.ChatResponse]) string {
+func (s *server) addStream(roomID string, stream *connect.ServerStream[proto.JoinRoomResponse]) string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -48,9 +47,8 @@ func (s *server) addStream(roomID string, stream *connect.BidiStream[proto.ChatR
 		return ""
 	}
 
-	key := stream.Peer().Addr
+	key := stream.Conn().Peer().Addr
 	streams[key] = stream
-	s.streamsByRoomID[roomID] = streams
 
 	return key
 }
@@ -65,7 +63,6 @@ func (s *server) deleteStream(roomID, key string) {
 	}
 	delete(streams, key)
 	s.streamsByRoomID[roomID] = streams
-	return
 }
 
 func (s *server) getStreams(roomID string) Streams {
@@ -122,6 +119,23 @@ func (s *server) ListRoom(ctx context.Context, _ *connect.Request[emptypb.Empty]
 	}), nil
 }
 
+func (s *server) JoinRoom(ctx context.Context, req *connect.Request[proto.JoinRoomRequest], stream *connect.ServerStream[proto.JoinRoomResponse]) error {
+	room, err := s.chatInteracter.GetRoom(ctx, req.Msg.GetRoomId())
+	if err != nil {
+		return err
+	}
+	joined := s.existStream(room.ID, stream.Conn().Peer().Addr)
+	if !joined {
+		sID := s.addStream(room.ID, stream)
+		defer func() {
+			s.deleteStream(room.ID, sID)
+		}()
+	}
+	<-ctx.Done()
+	log.Printf("leave room: %s\n err = %s\n", room.ID, ctx.Err())
+	return nil
+}
+
 func (s *server) ListMessage(ctx context.Context, req *connect.Request[proto.ListMessageRequest]) (*connect.Response[proto.ListMessageResponse], error) {
 	messages, err := s.chatInteracter.ListMessage(ctx, req.Msg.GetRoomId())
 	if err != nil {
@@ -133,47 +147,29 @@ func (s *server) ListMessage(ctx context.Context, req *connect.Request[proto.Lis
 	}}, nil
 }
 
-func (s *server) Chat(ctx context.Context, stream *connect.BidiStream[proto.ChatRequest, proto.ChatResponse]) error {
-	for {
-		req, err := stream.Receive()
-		if err != nil {
-			// stream closed
-			if errors.Is(err, io.EOF) {
-				return nil
-			}
-			return err
+func (s *server) Chat(ctx context.Context, req *connect.Request[proto.ChatRequest]) (*connect.Response[proto.ChatResponse], error) {
+	room, err := s.chatInteracter.GetRoom(ctx, req.Msg.GetMessage().GetRoomId())
+	if err != nil {
+		return nil, err
+	}
+
+	streams := s.getStreams(room.ID)
+	for _, st := range streams {
+		if err := s.chatInteracter.SendMessage(ctx, req.Msg.GetMessage().GetRoomId(), req.Msg.GetMessage().GetText()); err != nil {
+			return nil, err
 		}
-
-		if req.GetMessage() == nil {
-			continue
-		}
-
-		room, err := s.chatInteracter.GetRoom(ctx, req.GetMessage().GetRoomId())
-		if err != nil {
-			return err
-		}
-
-		joined := s.existStream(room.ID, stream.Peer().Addr)
-		if !joined {
-			sID := s.addStream(room.ID, stream)
-			defer func() {
-				s.deleteStream(room.ID, sID)
-			}()
-		}
-
-		streams := s.getStreams(room.ID)
-		for _, st := range streams {
-			if err := s.chatInteracter.SendMessage(ctx, req.GetMessage().GetRoomId(), req.GetMessage().GetText()); err != nil {
-				return err
-			}
-
-			if err := st.Send(&proto.ChatResponse{
-				Message: req.GetMessage(),
-			}); err != nil {
-				return err
-			}
+		if err := st.Send(&proto.JoinRoomResponse{
+			Message: &proto.Message{
+				RoomId: req.Msg.GetMessage().GetRoomId(),
+				Text:   req.Msg.GetMessage().GetText(),
+			},
+		}); err != nil {
+			return nil, err
 		}
 	}
+	return connect.NewResponse(&proto.ChatResponse{
+		Message: req.Msg.GetMessage(),
+	}), nil
 }
 
 func toProtoRoom(room *entity.Room) *proto.Room {
