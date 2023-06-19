@@ -10,8 +10,8 @@ import { ChatService } from 'src/proto/proto/chat_connectweb.ts';
 
 const Home: React.FC = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
+  const client = useClient(ChatService);
   useEffect(() => {
-    const client = useClient(ChatService);
     const listRooms = async () => {
       const res = await client.listRoom(Empty);
       setRooms(res.rooms);    

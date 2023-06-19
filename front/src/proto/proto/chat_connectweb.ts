@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ChatRequest, ChatResponse, CreateRoomRequest, CreateRoomResponse, GetRoomRequest, GetRoomResponse, ListMessageRequest, ListMessageResponse, ListRoomResponse } from "./chat_pb.js";
+import { ChatRequest, ChatResponse, CreateRoomRequest, CreateRoomResponse, GetRoomRequest, GetRoomResponse, JoinRoomRequest, JoinRoomResponse, ListMessageRequest, ListMessageResponse, ListRoomResponse } from "./chat_pb.js";
 import { Empty, MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -40,6 +40,15 @@ export const ChatService = {
       kind: MethodKind.Unary,
     },
     /**
+     * @generated from rpc api.ChatService.JoinRoom
+     */
+    joinRoom: {
+      name: "JoinRoom",
+      I: JoinRoomRequest,
+      O: JoinRoomResponse,
+      kind: MethodKind.ServerStreaming,
+    },
+    /**
      * @generated from rpc api.ChatService.ListMessage
      */
     listMessage: {
@@ -55,7 +64,7 @@ export const ChatService = {
       name: "Chat",
       I: ChatRequest,
       O: ChatResponse,
-      kind: MethodKind.BiDiStreaming,
+      kind: MethodKind.Unary,
     },
   }
 } as const;

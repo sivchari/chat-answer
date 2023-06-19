@@ -425,3 +425,77 @@ export class ChatResponse extends Message$1<ChatResponse> {
   }
 }
 
+/**
+ * @generated from message api.JoinRoomRequest
+ */
+export class JoinRoomRequest extends Message$1<JoinRoomRequest> {
+  /**
+   * @generated from field: string roomId = 1;
+   */
+  roomId = "";
+
+  constructor(data?: PartialMessage<JoinRoomRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "api.JoinRoomRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "roomId", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): JoinRoomRequest {
+    return new JoinRoomRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): JoinRoomRequest {
+    return new JoinRoomRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): JoinRoomRequest {
+    return new JoinRoomRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: JoinRoomRequest | PlainMessage<JoinRoomRequest> | undefined, b: JoinRoomRequest | PlainMessage<JoinRoomRequest> | undefined): boolean {
+    return proto3.util.equals(JoinRoomRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message api.JoinRoomResponse
+ */
+export class JoinRoomResponse extends Message$1<JoinRoomResponse> {
+  /**
+   * @generated from field: api.Message message = 1;
+   */
+  message?: Message;
+
+  constructor(data?: PartialMessage<JoinRoomResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "api.JoinRoomResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "message", kind: "message", T: Message },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): JoinRoomResponse {
+    return new JoinRoomResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): JoinRoomResponse {
+    return new JoinRoomResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): JoinRoomResponse {
+    return new JoinRoomResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: JoinRoomResponse | PlainMessage<JoinRoomResponse> | undefined, b: JoinRoomResponse | PlainMessage<JoinRoomResponse> | undefined): boolean {
+    return proto3.util.equals(JoinRoomResponse, a, b);
+  }
+}
+

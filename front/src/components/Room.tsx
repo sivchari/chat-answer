@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 import { Link, useParams } from 'react-router-dom';
-import { Button, Container, Group, List, Space, Text } from '@mantine/core';
+import { Button, Container, Group, List, ScrollArea, Space, Paper, Text, TextInput } from '@mantine/core';
 
 import { ChatService } from 'src/proto/proto/chat_connectweb.ts';
 import { Message } from 'src/proto/proto/chat_pb.ts';
@@ -9,21 +9,48 @@ import { useClient } from 'src/client/client.ts';
 
 const Room: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [text, setText] = useState<string>('');
   const [room, setRoom] = useState<string>('');
   const { id } = useParams<{ id: string }>();
+  const client = useClient(ChatService);
+  const joinRoom = async () => {
+   for await (const res of client.joinRoom({ roomId: id })) {
+      if (res.message) {
+        setMessages(prev => [...prev, res.message]);
+      }
+    }
+  }
   useEffect(() => { 
-    const client = useClient(ChatService);
     const listMessages = async () => {
       const res = await client.listMessage({ roomId: id });
       setMessages(res.messages)
     }
     const getRoom = async () => {
       const res = await client.getRoom({ id: id });
-      setRoom(res.name);
+      setRoom(res.room?.name || '');
     }
     listMessages();
     getRoom();
+    joinRoom();
   }, []);
+
+
+  const handleClick = async () => {
+    client.chat({
+      message: {
+        roomId: id,
+        text: text,
+      }
+    }) 
+    setText('');
+  }
+
+  const handleKeyPress = async (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      handleClick();
+    }
+  }
+
   return (
     <Container size='xs'> 
       <Group position='right'>
@@ -36,17 +63,42 @@ const Room: React.FC = () => {
           </Link>
         </Button>
       </Group>
-      <List
-        center
-        spacing='xl'
-        icon={<Space />}
-      >
-        {messages.map((message, i) => (
-          <List.Item key={i}>
-            <Text size='xl' align='center'>{message.text}</Text>
-          </List.Item>
-        ))}
-      </List>
+      <Space />
+      <ScrollArea h='50vh' w='100%'>
+        <List
+          center
+          spacing='md'
+          icon={<Space />}
+        >
+          {messages.map((message, i) => (
+            <List.Item key={i}>
+              <Text size='xl' align='center'>{message.text}</Text>
+            </List.Item>
+          ))}
+        </List>
+      </ScrollArea> 
+      <Paper shadow='md' m='xs' p='sm'>
+        <Group>
+          <TextInput
+            value={text}
+            onChange={(e) => setText(e.currentTarget.value)}
+            onKeyPress={handleKeyPress}
+            placeholder='メッセージを入力'
+            pos='absolute'
+            bottom={0}
+            left={0}
+            right={0}
+          />
+          <Button
+            onClick={handleClick}
+            pos='absolute'
+            bottom={0}
+            right={0}
+          >
+            送信
+          </Button>
+        </Group>
+      </Paper>
     </Container>
   )
 };
