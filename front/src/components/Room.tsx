@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 import { Link, useParams } from 'react-router-dom';
 import { Button, Container, Group, List, ScrollArea, Space, Paper, Text, TextInput } from '@mantine/core';
@@ -13,13 +13,20 @@ const Room: React.FC = () => {
   const [room, setRoom] = useState<string>('');
   const { id } = useParams<{ id: string }>();
   const client = useClient(ChatService);
+  const pass = useRef("");
+
   const joinRoom = async () => {
-   for await (const res of client.joinRoom({ roomId: id })) {
+    const res = await client.getPass();
+    pass.current = res.pass;
+
+    console.log(pass.current, "join");
+    for await (const res of client.joinRoom({ roomId: id, pass: pass.current })) {
       if (res.message) {
         setMessages(prev => [...prev, res.message]);
       }
     }
   }
+
   useEffect(() => { 
     const listMessages = async () => {
       const res = await client.listMessage({ roomId: id });
@@ -29,9 +36,17 @@ const Room: React.FC = () => {
       const res = await client.getRoom({ id: id });
       setRoom(res.room?.name || '');
     }
+    const leaveRoom = async () => {
+      console.log(pass.current, "leave");
+      await client.leaveRoom({ roomId: id, pass: pass.current });
+    }
     listMessages();
     getRoom();
     joinRoom();
+
+    return () => {
+      leaveRoom();
+    }
   }, []);
 
 

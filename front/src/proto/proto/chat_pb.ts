@@ -434,6 +434,11 @@ export class JoinRoomRequest extends Message$1<JoinRoomRequest> {
    */
   roomId = "";
 
+  /**
+   * @generated from field: string pass = 2;
+   */
+  pass = "";
+
   constructor(data?: PartialMessage<JoinRoomRequest>) {
     super();
     proto3.util.initPartial(data, this);
@@ -443,6 +448,7 @@ export class JoinRoomRequest extends Message$1<JoinRoomRequest> {
   static readonly typeName = "api.JoinRoomRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "roomId", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "pass", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): JoinRoomRequest {
@@ -496,6 +502,86 @@ export class JoinRoomResponse extends Message$1<JoinRoomResponse> {
 
   static equals(a: JoinRoomResponse | PlainMessage<JoinRoomResponse> | undefined, b: JoinRoomResponse | PlainMessage<JoinRoomResponse> | undefined): boolean {
     return proto3.util.equals(JoinRoomResponse, a, b);
+  }
+}
+
+/**
+ * @generated from message api.LeaveRoomRequest
+ */
+export class LeaveRoomRequest extends Message$1<LeaveRoomRequest> {
+  /**
+   * @generated from field: string roomId = 1;
+   */
+  roomId = "";
+
+  /**
+   * @generated from field: string pass = 2;
+   */
+  pass = "";
+
+  constructor(data?: PartialMessage<LeaveRoomRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "api.LeaveRoomRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "roomId", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "pass", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): LeaveRoomRequest {
+    return new LeaveRoomRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): LeaveRoomRequest {
+    return new LeaveRoomRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): LeaveRoomRequest {
+    return new LeaveRoomRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: LeaveRoomRequest | PlainMessage<LeaveRoomRequest> | undefined, b: LeaveRoomRequest | PlainMessage<LeaveRoomRequest> | undefined): boolean {
+    return proto3.util.equals(LeaveRoomRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message api.GetPassResponse
+ */
+export class GetPassResponse extends Message$1<GetPassResponse> {
+  /**
+   * @generated from field: string pass = 1;
+   */
+  pass = "";
+
+  constructor(data?: PartialMessage<GetPassResponse>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "api.GetPassResponse";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "pass", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetPassResponse {
+    return new GetPassResponse().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetPassResponse {
+    return new GetPassResponse().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetPassResponse {
+    return new GetPassResponse().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetPassResponse | PlainMessage<GetPassResponse> | undefined, b: GetPassResponse | PlainMessage<GetPassResponse> | undefined): boolean {
+    return proto3.util.equals(GetPassResponse, a, b);
   }
 }
 

@@ -51,6 +51,21 @@ func (mr *MockInteractorMockRecorder) CreateRoom(ctx, name interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateRoom", reflect.TypeOf((*MockInteractor)(nil).CreateRoom), ctx, name)
 }
 
+// GetPass mocks base method.
+func (m *MockInteractor) GetPass(ctx context.Context) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPass", ctx)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPass indicates an expected call of GetPass.
+func (mr *MockInteractorMockRecorder) GetPass(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPass", reflect.TypeOf((*MockInteractor)(nil).GetPass), ctx)
+}
+
 // GetRoom mocks base method.
 func (m *MockInteractor) GetRoom(ctx context.Context, id string) (*entity.Room, error) {
 	m.ctrl.T.Helper()

@@ -21,7 +21,12 @@ type server struct {
 	mu              sync.RWMutex
 }
 
-type Streams map[string]*connect.ServerStream[proto.JoinRoomResponse]
+type Streams map[string]*Stream
+
+type Stream struct {
+	pbStream *connect.ServerStream[proto.JoinRoomResponse]
+	close    chan struct{}
+}
 
 func NewServer(chatInteracter chat.Interactor) protoconnect.ChatServiceHandler {
 	return &server{
@@ -38,19 +43,17 @@ func (s *server) initStreams(roomID string) {
 	s.streamsByRoomID[roomID] = make(Streams, 0)
 }
 
-func (s *server) addStream(roomID string, stream *connect.ServerStream[proto.JoinRoomResponse]) string {
+func (s *server) addStream(roomID string, key string, stream *Stream) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	streams, ok := s.streamsByRoomID[roomID]
 	if !ok {
-		return ""
+		return
 	}
 
-	key := stream.Conn().Peer().Addr
 	streams[key] = stream
-
-	return key
+	s.streamsByRoomID[roomID] = streams
 }
 
 func (s *server) deleteStream(roomID, key string) {
@@ -88,6 +91,20 @@ func (s *server) existStream(roomID string, key string) bool {
 	return ok
 }
 
+func (s *server) getStream(roomID string, key string) *Stream {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if _, ok := s.streamsByRoomID[roomID]; !ok {
+		return nil
+	}
+	st, ok := s.streamsByRoomID[roomID][key]
+	if !ok {
+		return nil
+	}
+	return st
+}
+
 func (s *server) CreateRoom(ctx context.Context, req *connect.Request[proto.CreateRoomRequest]) (*connect.Response[proto.CreateRoomResponse], error) {
 	room, err := s.chatInteracter.CreateRoom(ctx, req.Msg.GetName())
 	if err != nil {
@@ -119,21 +136,50 @@ func (s *server) ListRoom(ctx context.Context, _ *connect.Request[emptypb.Empty]
 	}), nil
 }
 
+func (s *server) GetPass(ctx context.Context, _ *connect.Request[emptypb.Empty]) (*connect.Response[proto.GetPassResponse], error) {
+	key, err := s.chatInteracter.GetPass(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(&proto.GetPassResponse{
+		Pass: key,
+	}), nil
+}
+
 func (s *server) JoinRoom(ctx context.Context, req *connect.Request[proto.JoinRoomRequest], stream *connect.ServerStream[proto.JoinRoomResponse]) error {
 	room, err := s.chatInteracter.GetRoom(ctx, req.Msg.GetRoomId())
 	if err != nil {
 		return err
 	}
-	joined := s.existStream(room.ID, stream.Conn().Peer().Addr)
-	if !joined {
-		sID := s.addStream(room.ID, stream)
+	st := s.getStream(room.ID, req.Msg.GetPass())
+	if st == nil {
+		st = &Stream{
+			pbStream: stream,
+			close:    make(chan struct{}),
+		}
+		s.addStream(room.ID, req.Msg.GetPass(), st)
 		defer func() {
-			s.deleteStream(room.ID, sID)
+			s.deleteStream(room.ID, req.Msg.GetPass())
 		}()
 	}
-	<-ctx.Done()
-	log.Printf("leave room: %s\n err = %s\n", room.ID, ctx.Err())
+	select {
+	case <-ctx.Done():
+		log.Printf("leave room: %s\n err = %s\n", room.ID, ctx.Err())
+	case <-st.close:
+		log.Printf("leave room: %s\n stream close\n", room.ID)
+	}
 	return nil
+}
+
+func (s *server) LeaveRoom(ctx context.Context, req *connect.Request[proto.LeaveRoomRequest]) (*connect.Response[emptypb.Empty], error) {
+	st := s.getStream(req.Msg.GetRoomId(), req.Msg.GetPass())
+	if st == nil {
+		return &connect.Response[emptypb.Empty]{}, nil
+	}
+
+	st.close <- struct{}{}
+	close(st.close)
+	return &connect.Response[emptypb.Empty]{}, nil
 }
 
 func (s *server) ListMessage(ctx context.Context, req *connect.Request[proto.ListMessageRequest]) (*connect.Response[proto.ListMessageResponse], error) {
@@ -158,7 +204,7 @@ func (s *server) Chat(ctx context.Context, req *connect.Request[proto.ChatReques
 		if err := s.chatInteracter.SendMessage(ctx, req.Msg.GetMessage().GetRoomId(), req.Msg.GetMessage().GetText()); err != nil {
 			return nil, err
 		}
-		if err := st.Send(&proto.JoinRoomResponse{
+		if err := st.pbStream.Send(&proto.JoinRoomResponse{
 			Message: &proto.Message{
 				RoomId: req.Msg.GetMessage().GetRoomId(),
 				Text:   req.Msg.GetMessage().GetText(),
