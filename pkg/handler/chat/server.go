@@ -207,12 +207,13 @@ func (s *server) Chat(ctx context.Context, req *connect.Request[proto.ChatReques
 		return nil, err
 	}
 
+	if err := s.chatInteracter.SendMessage(ctx, req.Msg.GetMessage().GetRoomId(), req.Msg.GetMessage().GetText()); err != nil {
+		s.logger.ErrorCtx(ctx, "send message error", "err", err)
+		return nil, err
+	}
+
 	streams := s.getStreams(room.ID)
 	for _, st := range streams {
-		if err := s.chatInteracter.SendMessage(ctx, req.Msg.GetMessage().GetRoomId(), req.Msg.GetMessage().GetText()); err != nil {
-			s.logger.ErrorCtx(ctx, "send message error", "err", err)
-			return nil, err
-		}
 		if err := st.pbStream.Send(&proto.JoinRoomResponse{
 			Message: &proto.Message{
 				RoomId: req.Msg.GetMessage().GetRoomId(),
