@@ -6,17 +6,23 @@ import (
 
 	"github.com/bufbuild/connect-go"
 
+	"github.com/sivchari/chat-answer/pkg/log"
 	"github.com/sivchari/chat-answer/proto/proto"
 	"github.com/sivchari/chat-answer/proto/proto/protoconnect"
 )
 
-type server struct{}
-
-func NewServer() protoconnect.HealthzHandler {
-	return &server{}
+type server struct {
+	logger log.Handler
 }
 
-func (s *server) Check(_ context.Context, req *connect.Request[proto.CheckRequest]) (*connect.Response[proto.CheckResponse], error) {
+func NewServer(logger log.Handler) protoconnect.HealthzHandler {
+	return &server{
+		logger: logger,
+	}
+}
+
+func (s *server) Check(ctx context.Context, req *connect.Request[proto.CheckRequest]) (*connect.Response[proto.CheckResponse], error) {
+	s.logger.InfoCtx(ctx, "healthz check", "name", req.Msg.GetName())
 	return connect.NewResponse(&proto.CheckResponse{
 		Msg: fmt.Sprintf("Hello %s", req.Msg.GetName()),
 	}), nil

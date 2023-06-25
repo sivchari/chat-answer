@@ -1,6 +1,6 @@
 //go:generate mockgen -source=$GOFILE -destination=mock_$GOPACKAGE/mock_$GOFILE
 //go:generate goimports -w --local "github.com/sivchari/chat-answer" mock_$GOPACKAGE/mock_$GOFILE
-package util
+package ulid
 
 import (
 	"crypto/rand"

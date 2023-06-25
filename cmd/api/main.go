@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -18,8 +17,9 @@ import (
 	"github.com/sivchari/chat-answer/pkg/handler/healthz"
 	messagerepository "github.com/sivchari/chat-answer/pkg/infra/repository/message"
 	roomrepository "github.com/sivchari/chat-answer/pkg/infra/repository/room"
+	"github.com/sivchari/chat-answer/pkg/log"
+	"github.com/sivchari/chat-answer/pkg/ulid"
 	chatinteractor "github.com/sivchari/chat-answer/pkg/usecase/chat"
-	"github.com/sivchari/chat-answer/pkg/util"
 	"github.com/sivchari/chat-answer/proto/proto/protoconnect"
 )
 
@@ -34,12 +34,13 @@ func run() int {
 	)
 
 	// DI
-	healthzServer := healthz.NewServer()
-	ulidGenerator := util.NewUILDGenerator()
+	logger := log.NewHandler(log.LevelInfo, log.WithJSONFormat())
+	ulidGenerator := ulid.NewUILDGenerator()
 	roomRepository := roomrepository.NewRepository()
 	messageRepository := messagerepository.NewRepository()
 	chatInteractor := chatinteractor.NewInteractor(ulidGenerator, roomRepository, messageRepository)
-	chatServer := chat.NewServer(chatInteractor)
+	healthzServer := healthz.NewServer(logger)
+	chatServer := chat.NewServer(logger, chatInteractor)
 
 	mux := http.NewServeMux()
 	mux.Handle(protoconnect.NewHealthzHandler(healthzServer))
@@ -55,7 +56,7 @@ func run() int {
 
 	go func() {
 		if err := srv.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
-			log.Println(err)
+			logger.ErrorCtx(ctx, "failed to ListenAndServe", "err", err)
 		}
 	}()
 
