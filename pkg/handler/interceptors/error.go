@@ -19,7 +19,10 @@ func (i *errorInterceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
 		req connect.AnyRequest,
 	) (connect.AnyResponse, error) {
 		res, err := next(ctx, req)
-		return res, toConnectError(err)
+		if err != nil {
+			return nil, toConnectError(err)
+		}
+		return res, nil
 	})
 }
 
