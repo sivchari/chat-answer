@@ -10,11 +10,11 @@ import (
 	"github.com/sivchari/chat-answer/pkg/domain/entity"
 	"github.com/sivchari/chat-answer/pkg/domain/repository/message/mock_message"
 	"github.com/sivchari/chat-answer/pkg/domain/repository/room/mock_room"
-	"github.com/sivchari/chat-answer/pkg/util/mock_util"
+	"github.com/sivchari/chat-answer/pkg/ulid/mock_ulid"
 )
 
 type mocks struct {
-	ulidGenerator     *mock_util.MockULIDGenerator
+	ulidGenerator     *mock_ulid.MockULIDGenerator
 	roomRepository    *mock_room.MockRepository
 	messageRepository *mock_message.MockRepository
 }
@@ -22,7 +22,7 @@ type mocks struct {
 func newWithMocks(t *testing.T) (context.Context, Interactor, *mocks) {
 	ctx := context.Background()
 	ctrl := gomock.NewController(t)
-	ulidGenerator := mock_util.NewMockULIDGenerator(ctrl)
+	ulidGenerator := mock_ulid.NewMockULIDGenerator(ctrl)
 	roomRepository := mock_room.NewMockRepository(ctrl)
 	messageRepository := mock_message.NewMockRepository(ctrl)
 	return ctx, NewInteractor(

@@ -2,20 +2,20 @@ package chat
 
 import (
 	"context"
-	"log"
 	"sync"
 
 	"github.com/bufbuild/connect-go"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/sivchari/chat-answer/pkg/domain/entity"
+	"github.com/sivchari/chat-answer/pkg/log"
 	"github.com/sivchari/chat-answer/pkg/usecase/chat"
-
 	"github.com/sivchari/chat-answer/proto/proto"
 	"github.com/sivchari/chat-answer/proto/proto/protoconnect"
 )
 
 type server struct {
+	logger          log.Handler
 	chatInteracter  chat.Interactor
 	streamsByRoomID map[string]Streams
 	mu              sync.RWMutex
@@ -28,8 +28,9 @@ type Stream struct {
 	close    chan struct{}
 }
 
-func NewServer(chatInteracter chat.Interactor) protoconnect.ChatServiceHandler {
+func NewServer(logger log.Handler, chatInteracter chat.Interactor) protoconnect.ChatServiceHandler {
 	return &server{
+		logger,
 		chatInteracter,
 		make(map[string]Streams, 0),
 		sync.RWMutex{},
@@ -108,6 +109,7 @@ func (s *server) getStream(roomID string, key string) *Stream {
 func (s *server) CreateRoom(ctx context.Context, req *connect.Request[proto.CreateRoomRequest]) (*connect.Response[proto.CreateRoomResponse], error) {
 	room, err := s.chatInteracter.CreateRoom(ctx, req.Msg.GetName())
 	if err != nil {
+		s.logger.ErrorCtx(ctx, "create room error", "err", err)
 		return nil, err
 	}
 	s.initStreams(room.ID)
@@ -119,6 +121,7 @@ func (s *server) CreateRoom(ctx context.Context, req *connect.Request[proto.Crea
 func (s *server) GetRoom(ctx context.Context, req *connect.Request[proto.GetRoomRequest]) (*connect.Response[proto.GetRoomResponse], error) {
 	room, err := s.chatInteracter.GetRoom(ctx, req.Msg.GetId())
 	if err != nil {
+		s.logger.ErrorCtx(ctx, "get room error", "err", err)
 		return nil, err
 	}
 	return connect.NewResponse(&proto.GetRoomResponse{
@@ -129,6 +132,7 @@ func (s *server) GetRoom(ctx context.Context, req *connect.Request[proto.GetRoom
 func (s *server) ListRoom(ctx context.Context, _ *connect.Request[emptypb.Empty]) (*connect.Response[proto.ListRoomResponse], error) {
 	rooms, err := s.chatInteracter.ListRoom(ctx)
 	if err != nil {
+		s.logger.ErrorCtx(ctx, "list room error", "err", err)
 		return nil, err
 	}
 	return connect.NewResponse(&proto.ListRoomResponse{
@@ -149,6 +153,7 @@ func (s *server) GetPass(ctx context.Context, _ *connect.Request[emptypb.Empty])
 func (s *server) JoinRoom(ctx context.Context, req *connect.Request[proto.JoinRoomRequest], stream *connect.ServerStream[proto.JoinRoomResponse]) error {
 	room, err := s.chatInteracter.GetRoom(ctx, req.Msg.GetRoomId())
 	if err != nil {
+		s.logger.ErrorCtx(ctx, "get room error", "err", err)
 		return err
 	}
 	st := s.getStream(room.ID, req.Msg.GetPass())
@@ -160,13 +165,14 @@ func (s *server) JoinRoom(ctx context.Context, req *connect.Request[proto.JoinRo
 		s.addStream(room.ID, req.Msg.GetPass(), st)
 		defer func() {
 			s.deleteStream(room.ID, req.Msg.GetPass())
+			s.logger.InfoCtx(ctx, "delete stream", "stream id", req.Msg.GetPass())
 		}()
 	}
 	select {
 	case <-ctx.Done():
-		log.Printf("leave room: %s\n err = %s\n", room.ID, ctx.Err())
+		s.logger.InfoCtx(ctx, "leave room", room.ID, ctx.Err())
 	case <-st.close:
-		log.Printf("leave room: %s\n stream close\n", room.ID)
+		s.logger.InfoCtx(ctx, "leave room", room.ID, "close stream")
 	}
 	return nil
 }
@@ -185,6 +191,7 @@ func (s *server) LeaveRoom(ctx context.Context, req *connect.Request[proto.Leave
 func (s *server) ListMessage(ctx context.Context, req *connect.Request[proto.ListMessageRequest]) (*connect.Response[proto.ListMessageResponse], error) {
 	messages, err := s.chatInteracter.ListMessage(ctx, req.Msg.GetRoomId())
 	if err != nil {
+		s.logger.ErrorCtx(ctx, "list message error", "err", err)
 		return nil, err
 	}
 
@@ -196,12 +203,14 @@ func (s *server) ListMessage(ctx context.Context, req *connect.Request[proto.Lis
 func (s *server) Chat(ctx context.Context, req *connect.Request[proto.ChatRequest]) (*connect.Response[proto.ChatResponse], error) {
 	room, err := s.chatInteracter.GetRoom(ctx, req.Msg.GetMessage().GetRoomId())
 	if err != nil {
+		s.logger.ErrorCtx(ctx, "get room error", "err", err)
 		return nil, err
 	}
 
 	streams := s.getStreams(room.ID)
 	for _, st := range streams {
 		if err := s.chatInteracter.SendMessage(ctx, req.Msg.GetMessage().GetRoomId(), req.Msg.GetMessage().GetText()); err != nil {
+			s.logger.ErrorCtx(ctx, "send message error", "err", err)
 			return nil, err
 		}
 		if err := st.pbStream.Send(&proto.JoinRoomResponse{
@@ -210,6 +219,7 @@ func (s *server) Chat(ctx context.Context, req *connect.Request[proto.ChatReques
 				Text:   req.Msg.GetMessage().GetText(),
 			},
 		}); err != nil {
+			s.logger.ErrorCtx(ctx, "send message error via stream", "err", err)
 			return nil, err
 		}
 	}

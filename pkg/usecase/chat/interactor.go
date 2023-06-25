@@ -8,7 +8,7 @@ import (
 	"github.com/sivchari/chat-answer/pkg/domain/entity"
 	"github.com/sivchari/chat-answer/pkg/domain/repository/message"
 	"github.com/sivchari/chat-answer/pkg/domain/repository/room"
-	"github.com/sivchari/chat-answer/pkg/util"
+	"github.com/sivchari/chat-answer/pkg/ulid"
 )
 
 type Interactor interface {
@@ -21,13 +21,13 @@ type Interactor interface {
 }
 
 type interactor struct {
-	ulidGenerator     util.ULIDGenerator
+	ulidGenerator     ulid.ULIDGenerator
 	roomRepository    room.Repository
 	messageRepository message.Repository
 }
 
 func NewInteractor(
-	ulidGenerator util.ULIDGenerator,
+	ulidGenerator ulid.ULIDGenerator,
 	roomRepository room.Repository,
 	messageRepository message.Repository,
 ) Interactor {
