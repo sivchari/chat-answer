@@ -40,8 +40,12 @@ const (
 	ChatServiceGetRoomProcedure = "/api.ChatService/GetRoom"
 	// ChatServiceListRoomProcedure is the fully-qualified name of the ChatService's ListRoom RPC.
 	ChatServiceListRoomProcedure = "/api.ChatService/ListRoom"
+	// ChatServiceGetPassProcedure is the fully-qualified name of the ChatService's GetPass RPC.
+	ChatServiceGetPassProcedure = "/api.ChatService/GetPass"
 	// ChatServiceJoinRoomProcedure is the fully-qualified name of the ChatService's JoinRoom RPC.
 	ChatServiceJoinRoomProcedure = "/api.ChatService/JoinRoom"
+	// ChatServiceLeaveRoomProcedure is the fully-qualified name of the ChatService's LeaveRoom RPC.
+	ChatServiceLeaveRoomProcedure = "/api.ChatService/LeaveRoom"
 	// ChatServiceListMessageProcedure is the fully-qualified name of the ChatService's ListMessage RPC.
 	ChatServiceListMessageProcedure = "/api.ChatService/ListMessage"
 	// ChatServiceChatProcedure is the fully-qualified name of the ChatService's Chat RPC.
@@ -53,7 +57,9 @@ type ChatServiceClient interface {
 	CreateRoom(context.Context, *connect_go.Request[proto.CreateRoomRequest]) (*connect_go.Response[proto.CreateRoomResponse], error)
 	GetRoom(context.Context, *connect_go.Request[proto.GetRoomRequest]) (*connect_go.Response[proto.GetRoomResponse], error)
 	ListRoom(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[proto.ListRoomResponse], error)
+	GetPass(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[proto.GetPassResponse], error)
 	JoinRoom(context.Context, *connect_go.Request[proto.JoinRoomRequest]) (*connect_go.ServerStreamForClient[proto.JoinRoomResponse], error)
+	LeaveRoom(context.Context, *connect_go.Request[proto.LeaveRoomRequest]) (*connect_go.Response[emptypb.Empty], error)
 	ListMessage(context.Context, *connect_go.Request[proto.ListMessageRequest]) (*connect_go.Response[proto.ListMessageResponse], error)
 	Chat(context.Context, *connect_go.Request[proto.ChatRequest]) (*connect_go.Response[proto.ChatResponse], error)
 }
@@ -83,9 +89,19 @@ func NewChatServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 			baseURL+ChatServiceListRoomProcedure,
 			opts...,
 		),
+		getPass: connect_go.NewClient[emptypb.Empty, proto.GetPassResponse](
+			httpClient,
+			baseURL+ChatServiceGetPassProcedure,
+			opts...,
+		),
 		joinRoom: connect_go.NewClient[proto.JoinRoomRequest, proto.JoinRoomResponse](
 			httpClient,
 			baseURL+ChatServiceJoinRoomProcedure,
+			opts...,
+		),
+		leaveRoom: connect_go.NewClient[proto.LeaveRoomRequest, emptypb.Empty](
+			httpClient,
+			baseURL+ChatServiceLeaveRoomProcedure,
 			opts...,
 		),
 		listMessage: connect_go.NewClient[proto.ListMessageRequest, proto.ListMessageResponse](
@@ -106,7 +122,9 @@ type chatServiceClient struct {
 	createRoom  *connect_go.Client[proto.CreateRoomRequest, proto.CreateRoomResponse]
 	getRoom     *connect_go.Client[proto.GetRoomRequest, proto.GetRoomResponse]
 	listRoom    *connect_go.Client[emptypb.Empty, proto.ListRoomResponse]
+	getPass     *connect_go.Client[emptypb.Empty, proto.GetPassResponse]
 	joinRoom    *connect_go.Client[proto.JoinRoomRequest, proto.JoinRoomResponse]
+	leaveRoom   *connect_go.Client[proto.LeaveRoomRequest, emptypb.Empty]
 	listMessage *connect_go.Client[proto.ListMessageRequest, proto.ListMessageResponse]
 	chat        *connect_go.Client[proto.ChatRequest, proto.ChatResponse]
 }
@@ -126,9 +144,19 @@ func (c *chatServiceClient) ListRoom(ctx context.Context, req *connect_go.Reques
 	return c.listRoom.CallUnary(ctx, req)
 }
 
+// GetPass calls api.ChatService.GetPass.
+func (c *chatServiceClient) GetPass(ctx context.Context, req *connect_go.Request[emptypb.Empty]) (*connect_go.Response[proto.GetPassResponse], error) {
+	return c.getPass.CallUnary(ctx, req)
+}
+
 // JoinRoom calls api.ChatService.JoinRoom.
 func (c *chatServiceClient) JoinRoom(ctx context.Context, req *connect_go.Request[proto.JoinRoomRequest]) (*connect_go.ServerStreamForClient[proto.JoinRoomResponse], error) {
 	return c.joinRoom.CallServerStream(ctx, req)
+}
+
+// LeaveRoom calls api.ChatService.LeaveRoom.
+func (c *chatServiceClient) LeaveRoom(ctx context.Context, req *connect_go.Request[proto.LeaveRoomRequest]) (*connect_go.Response[emptypb.Empty], error) {
+	return c.leaveRoom.CallUnary(ctx, req)
 }
 
 // ListMessage calls api.ChatService.ListMessage.
@@ -146,7 +174,9 @@ type ChatServiceHandler interface {
 	CreateRoom(context.Context, *connect_go.Request[proto.CreateRoomRequest]) (*connect_go.Response[proto.CreateRoomResponse], error)
 	GetRoom(context.Context, *connect_go.Request[proto.GetRoomRequest]) (*connect_go.Response[proto.GetRoomResponse], error)
 	ListRoom(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[proto.ListRoomResponse], error)
+	GetPass(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[proto.GetPassResponse], error)
 	JoinRoom(context.Context, *connect_go.Request[proto.JoinRoomRequest], *connect_go.ServerStream[proto.JoinRoomResponse]) error
+	LeaveRoom(context.Context, *connect_go.Request[proto.LeaveRoomRequest]) (*connect_go.Response[emptypb.Empty], error)
 	ListMessage(context.Context, *connect_go.Request[proto.ListMessageRequest]) (*connect_go.Response[proto.ListMessageResponse], error)
 	Chat(context.Context, *connect_go.Request[proto.ChatRequest]) (*connect_go.Response[proto.ChatResponse], error)
 }
@@ -173,9 +203,19 @@ func NewChatServiceHandler(svc ChatServiceHandler, opts ...connect_go.HandlerOpt
 		svc.ListRoom,
 		opts...,
 	))
+	mux.Handle(ChatServiceGetPassProcedure, connect_go.NewUnaryHandler(
+		ChatServiceGetPassProcedure,
+		svc.GetPass,
+		opts...,
+	))
 	mux.Handle(ChatServiceJoinRoomProcedure, connect_go.NewServerStreamHandler(
 		ChatServiceJoinRoomProcedure,
 		svc.JoinRoom,
+		opts...,
+	))
+	mux.Handle(ChatServiceLeaveRoomProcedure, connect_go.NewUnaryHandler(
+		ChatServiceLeaveRoomProcedure,
+		svc.LeaveRoom,
 		opts...,
 	))
 	mux.Handle(ChatServiceListMessageProcedure, connect_go.NewUnaryHandler(
@@ -206,8 +246,16 @@ func (UnimplementedChatServiceHandler) ListRoom(context.Context, *connect_go.Req
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("api.ChatService.ListRoom is not implemented"))
 }
 
+func (UnimplementedChatServiceHandler) GetPass(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[proto.GetPassResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("api.ChatService.GetPass is not implemented"))
+}
+
 func (UnimplementedChatServiceHandler) JoinRoom(context.Context, *connect_go.Request[proto.JoinRoomRequest], *connect_go.ServerStream[proto.JoinRoomResponse]) error {
 	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("api.ChatService.JoinRoom is not implemented"))
+}
+
+func (UnimplementedChatServiceHandler) LeaveRoom(context.Context, *connect_go.Request[proto.LeaveRoomRequest]) (*connect_go.Response[emptypb.Empty], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("api.ChatService.LeaveRoom is not implemented"))
 }
 
 func (UnimplementedChatServiceHandler) ListMessage(context.Context, *connect_go.Request[proto.ListMessageRequest]) (*connect_go.Response[proto.ListMessageResponse], error) {

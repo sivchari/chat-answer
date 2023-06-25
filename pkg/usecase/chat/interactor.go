@@ -15,6 +15,7 @@ type Interactor interface {
 	CreateRoom(ctx context.Context, name string) (*entity.Room, error)
 	GetRoom(ctx context.Context, id string) (*entity.Room, error)
 	ListRoom(ctx context.Context) ([]*entity.Room, error)
+	GetPass(ctx context.Context) (string, error)
 	SendMessage(ctx context.Context, roomID, text string) error
 	ListMessage(ctx context.Context, roomID string) ([]*entity.Message, error)
 }
@@ -66,6 +67,10 @@ func (i *interactor) GetRoom(ctx context.Context, id string) (*entity.Room, erro
 		return nil, err
 	}
 	return room, nil
+}
+
+func (i *interactor) GetPass(ctx context.Context) (string, error) {
+	return i.ulidGenerator.Generate()
 }
 
 func (i *interactor) SendMessage(ctx context.Context, roomID, text string) error {
