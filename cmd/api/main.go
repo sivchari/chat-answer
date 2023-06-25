@@ -11,10 +11,12 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 
+	"github.com/bufbuild/connect-go"
 	"github.com/rs/cors"
 
 	"github.com/sivchari/chat-answer/pkg/handler/chat"
 	"github.com/sivchari/chat-answer/pkg/handler/healthz"
+	"github.com/sivchari/chat-answer/pkg/handler/interceptors"
 	messagerepository "github.com/sivchari/chat-answer/pkg/infra/repository/message"
 	roomrepository "github.com/sivchari/chat-answer/pkg/infra/repository/room"
 	"github.com/sivchari/chat-answer/pkg/log"
@@ -44,7 +46,9 @@ func run() int {
 
 	mux := http.NewServeMux()
 	mux.Handle(protoconnect.NewHealthzHandler(healthzServer))
-	mux.Handle(protoconnect.NewChatServiceHandler(chatServer))
+	mux.Handle(protoconnect.NewChatServiceHandler(chatServer, connect.WithInterceptors(
+		interceptors.NewErrorInterceptor(),
+	)))
 	handler := cors.AllowAll().Handler(h2c.NewHandler(mux, &http2.Server{}))
 	srv := &http.Server{
 		Addr:    ":8080",
