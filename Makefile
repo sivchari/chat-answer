@@ -22,6 +22,10 @@ buf: ## Generate protobuf codes.
 run-api: ## Serve api.
 	docker compose up api -d --build
 
+.PHONY: run-web
+run-web: ## Serve web.
+	docker compose up web -d --build
+
 .PHONY: go-generate
 go-generate: ## Exec go generate.
 	go generate ./pkg/...

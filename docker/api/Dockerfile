@@ -1,4 +1,4 @@
-ARG GO_VERSION
+ARG GO_VERSION=1.20.5
 ARG ALPINE_VERSION=3.18
 
 # ===== build go binary =====
