@@ -41,7 +41,10 @@ func (i *errorInterceptor) WrapStreamingHandler(next connect.StreamingHandlerFun
 		conn connect.StreamingHandlerConn,
 	) error {
 		err := next(ctx, conn)
-		return toConnectError(err)
+		if err != nil {
+			return toConnectError(err)
+		}
+		return nil
 	})
 }
 
