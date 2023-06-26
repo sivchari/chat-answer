@@ -73,22 +73,14 @@ func (s *server) getStreams(roomID string) Streams {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	streams, ok := s.streamsByRoomID[roomID]
-	if !ok {
-		return nil
-	}
-	return streams
+	return s.streamsByRoomID[roomID]
 }
 
 func (s *server) existStream(roomID string, key string) bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	streams, ok := s.streamsByRoomID[roomID]
-	if !ok {
-		return false
-	}
-	_, ok = streams[key]
+	_, ok := s.streamsByRoomID[roomID][key]
 	return ok
 }
 
@@ -96,14 +88,7 @@ func (s *server) getStream(roomID string, key string) *Stream {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	if _, ok := s.streamsByRoomID[roomID]; !ok {
-		return nil
-	}
-	st, ok := s.streamsByRoomID[roomID][key]
-	if !ok {
-		return nil
-	}
-	return st
+	return s.streamsByRoomID[roomID][key]
 }
 
 func (s *server) CreateRoom(ctx context.Context, req *connect.Request[proto.CreateRoomRequest]) (*connect.Response[proto.CreateRoomResponse], error) {
