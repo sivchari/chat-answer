@@ -9,6 +9,6 @@ RUN chmod +x "/usr/local/bin/buf"
 
 WORKDIR /usr/src/chat-answer
 
-RUN npm install -g @bufbuild/protoc-gen-es
+RUN npm install -g @bufbuild/protoc-gen-es @bufbuild/protoc-gen-connect-web
 
 ENTRYPOINT ["/usr/local/bin/buf"]

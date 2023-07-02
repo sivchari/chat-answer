@@ -5,10 +5,8 @@ managed:
     default: github.com/sivchari/chat-answer/proto
 plugins:
   - name: es
-    path: ./front/node_modules/.bin/protoc-gen-es
     out: ./front/src/proto
     opt: target=ts
   - name: connect-web
-    path: ./front/node_modules/.bin/protoc-gen-connect-web
     out: ./front/src/proto
     opt: target=ts

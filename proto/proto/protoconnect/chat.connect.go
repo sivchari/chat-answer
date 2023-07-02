@@ -7,13 +7,11 @@ package protoconnect
 import (
 	context "context"
 	errors "errors"
+	connect_go "github.com/bufbuild/connect-go"
+	proto "github.com/sivchari/chat-answer/proto/proto"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	http "net/http"
 	strings "strings"
-
-	connect_go "github.com/bufbuild/connect-go"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
-
-	proto "github.com/sivchari/chat-answer/proto/proto"
 )
 
 // This is a compile-time assertion to ensure that this generated file and the connect package are
