@@ -68,7 +68,7 @@ message JoinRoomRequest {
 }
 
 message JoinRoomResponse {
-    Message message = 1;
+  Message message = 1;
 }
 
 message LeaveRoomRequest {

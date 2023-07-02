@@ -13,10 +13,17 @@ services:
       dockerfile: docker/front/Dockerfile
     ports:
       - "5173:5173"
-  buf:
+  buf-go:
     build:
       context: .
-      dockerfile: docker/buf/Dockerfile
+      dockerfile: docker/buf/go/Dockerfile
+    working_dir: /usr/src/chat-answer
+    volumes:
+      - ./:/usr/src/chat-answer
+  buf-ts:
+    build:
+      context: .
+      dockerfile: docker/buf/ts/Dockerfile
     working_dir: /usr/src/chat-answer
     volumes:
       - ./:/usr/src/chat-answer
