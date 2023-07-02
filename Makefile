@@ -11,12 +11,13 @@ tools: ## Install required tools.
 
 .PHONY: buf
 buf: ## Generate protobuf codes.
-	docker compose run --rm buf mod update
-	docker compose run --rm buf generate --path proto --template buf.gen.yaml
+	docker compose run --rm buf-go mod update
+	docker compose run --rm buf-go generate --path proto --template buf.gen.go.yaml
+	docker compose run --rm buf-go format proto -d -w > /dev/null
 	gofmt -s -w proto/proto
-	go install golang.org/x/tools/cmd/goimports@latest
 	goimports -w -local "github.com/sivchari/chat-answer" proto/proto
-	docker compose run --rm buf format proto -d -w
+	docker compose run --rm buf-ts mod update
+	docker compose run --rm buf-ts generate --path proto --template buf.gen.ts.yaml
 
 .PHONY: run-api
 run-api: ## Serve api.
