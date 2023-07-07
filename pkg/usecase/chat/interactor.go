@@ -78,7 +78,11 @@ func (i *interactor) ListRoom(ctx context.Context) ([]*entity.Room, error) {
 }
 
 func (i *interactor) GetPass(_ context.Context) (string, error) {
-	return i.ulidGenerator.Generate()
+	id, err := i.ulidGenerator.Generate()
+	if err != nil {
+		return "", nil
+	}
+	return id, nil
 }
 
 func (i *interactor) SendMessage(ctx context.Context, roomID, text string) error {

@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/bufbuild/connect-go"
+	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/sivchari/chat-answer/pkg/domain/entity"
@@ -139,18 +140,29 @@ func (s *server) Chat(ctx context.Context, req *connect.Request[proto.ChatReques
 		return nil, err
 	}
 
+	eg, ctx := errgroup.WithContext(ctx)
 	streams := s.getStreams(room.ID)
 	for _, st := range streams {
-		if err := st.pbStream.Send(&proto.JoinRoomResponse{
-			Message: &proto.Message{
-				RoomId: req.Msg.GetMessage().GetRoomId(),
-				Text:   req.Msg.GetMessage().GetText(),
-			},
-		}); err != nil {
-			s.logger.ErrorCtx(ctx, "send message error via stream", "err", err)
-			return nil, err
-		}
+		// コピーしないとすべて最後のstのみを参照してしまう
+		// ref: https://qiita.com/sudix/items/67d4cad08fe88dcb9a6d
+		st := st
+		eg.Go(func() error {
+			if err := st.pbStream.Send(&proto.JoinRoomResponse{
+				Message: &proto.Message{
+					RoomId: req.Msg.GetMessage().GetRoomId(),
+					Text:   req.Msg.GetMessage().GetText(),
+				},
+			}); err != nil {
+				return err
+			}
+			return nil
+		})
 	}
+	if err := eg.Wait(); err != nil {
+		s.logger.ErrorCtx(ctx, "send message error via stream", "err", err)
+		return nil, err
+	}
+
 	return connect.NewResponse(&proto.ChatResponse{
 		Message: req.Msg.GetMessage(),
 	}), nil
