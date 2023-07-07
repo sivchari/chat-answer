@@ -13,7 +13,7 @@ type repository struct {
 	mu          sync.RWMutex
 }
 
-func NewRepository() message.Repository {
+func New() message.Repository {
 	return &repository{
 		mapByRoomID: make(map[string][]*entity.Message, 0),
 	}

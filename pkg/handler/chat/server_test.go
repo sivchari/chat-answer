@@ -10,22 +10,27 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/sivchari/chat-answer/pkg/domain/entity"
+	"github.com/sivchari/chat-answer/pkg/log/mock_log"
 	"github.com/sivchari/chat-answer/pkg/usecase/chat/mock_chat"
 	"github.com/sivchari/chat-answer/proto/proto"
 	"github.com/sivchari/chat-answer/proto/proto/protoconnect"
 )
 
 type mocks struct {
+	logger         *mock_log.MockHandler
 	chatInteractor *mock_chat.MockInteractor
 }
 
 func newWithMocks(t *testing.T) (context.Context, protoconnect.ChatServiceHandler, *mocks) {
 	ctx := context.Background()
 	ctrl := gomock.NewController(t)
+	logger := mock_log.NewMockHandler(ctrl)
 	chatInteractor := mock_chat.NewMockInteractor(ctrl)
-	return ctx, NewServer(
+	return ctx, New(
+			logger,
 			chatInteractor,
 		), &mocks{
+			logger,
 			chatInteractor,
 		}
 }
