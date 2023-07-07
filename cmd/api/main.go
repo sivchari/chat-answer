@@ -43,12 +43,14 @@ func run() int {
 	chatInteractor := chatinteractor.NewInteractor(ulidGenerator, roomRepository, messageRepository)
 	healthzServer := healthz.New(logger)
 	chatServer := chat.New(logger, chatInteractor)
+	interceptors := connect.WithInterceptors(
+		interceptors.NewAuthInterceptor(),
+		interceptors.NewErrorInterceptor(),
+	)
 
 	mux := http.NewServeMux()
-	mux.Handle(protoconnect.NewHealthzHandler(healthzServer))
-	mux.Handle(protoconnect.NewChatServiceHandler(chatServer, connect.WithInterceptors(
-		interceptors.NewErrorInterceptor(),
-	)))
+	mux.Handle(protoconnect.NewHealthzHandler(healthzServer, interceptors))
+	mux.Handle(protoconnect.NewChatServiceHandler(chatServer, interceptors))
 	handler := cors.AllowAll().Handler(h2c.NewHandler(mux, &http2.Server{}))
 	srv := &http.Server{
 		Addr:    ":8080",

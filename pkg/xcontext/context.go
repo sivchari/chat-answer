@@ -1,11 +1,13 @@
 package xcontext
 
-import "context"
+import (
+	"context"
+)
 
-type ULID struct{}
+type UserID struct{}
 
 type keyConstraint interface {
-	ULID
+	UserID
 }
 
 type valueConstraint interface {
