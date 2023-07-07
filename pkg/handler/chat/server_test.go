@@ -54,19 +54,81 @@ func TestServer_CreateRoom(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestService_GetRoom(t *testing.T) {
+	id := "roomID"
+	name := "name"
+
+	ctx, s, m := newWithMocks(t)
+	m.chatInteractor.EXPECT().GetRoom(ctx, id).Return(&entity.Room{
+		ID:   id,
+		Name: name,
+	}, nil).Times(1)
+
+	res, err := s.GetRoom(ctx, connect.NewRequest(&proto.GetRoomRequest{
+		Id: id,
+	}))
+	assert.Equal(t, connect.NewResponse(&proto.GetRoomResponse{
+		Room: &proto.Room{
+			Id:   id,
+			Name: name,
+		},
+	}), res)
+	assert.NoError(t, err)
+}
+
 func TestServer_ListRoom(t *testing.T) {
+	id := "id"
+	name := "name"
+
 	ctx, s, m := newWithMocks(t)
 	m.chatInteractor.EXPECT().ListRoom(ctx).Return([]*entity.Room{{
-		ID:   "id",
-		Name: "name",
+		ID:   id,
+		Name: name,
 	}}, nil).Times(1)
 
 	res, err := s.ListRoom(ctx, connect.NewRequest(&emptypb.Empty{}))
 	assert.Equal(t, connect.NewResponse(&proto.ListRoomResponse{
 		Rooms: []*proto.Room{{
-			Id:   "id",
-			Name: "name",
+			Id:   id,
+			Name: name,
 		}},
+	}), res)
+	assert.NoError(t, err)
+}
+
+func TestServer_GetPass(t *testing.T) {
+	pass := "pass"
+
+	ctx, s, m := newWithMocks(t)
+	m.chatInteractor.EXPECT().GetPass(ctx).Return(pass, nil).Times(1)
+
+	res, err := s.GetPass(ctx, connect.NewRequest(&emptypb.Empty{}))
+	assert.Equal(t, connect.NewResponse(&proto.GetPassResponse{
+		Pass: pass,
+	}), res)
+	assert.NoError(t, err)
+}
+
+func TestServer_ListMessage(t *testing.T) {
+	roomID := "roomID"
+	message := &entity.Message{
+		RoomID: roomID,
+		Text:   "text",
+	}
+
+	ctx, s, m := newWithMocks(t)
+	m.chatInteractor.EXPECT().ListMessage(ctx, roomID).Return([]*entity.Message{message}, nil).Times(1)
+
+	res, err := s.ListMessage(ctx, connect.NewRequest(&proto.ListMessageRequest{
+		RoomId: roomID,
+	}))
+	assert.Equal(t, connect.NewResponse(&proto.ListMessageResponse{
+		Messages: []*proto.Message{
+			{
+				RoomId: message.RoomID,
+				Text:   message.Text,
+			},
+		},
 	}), res)
 	assert.NoError(t, err)
 }

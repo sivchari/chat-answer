@@ -4,10 +4,11 @@ package chat
 
 import (
 	"context"
+	"errors"
 
 	"github.com/sivchari/chat-answer/pkg/domain/entity"
-	"github.com/sivchari/chat-answer/pkg/domain/repository/message"
-	"github.com/sivchari/chat-answer/pkg/domain/repository/room"
+	messagerepository "github.com/sivchari/chat-answer/pkg/domain/repository/message"
+	roomrepository "github.com/sivchari/chat-answer/pkg/domain/repository/room"
 	"github.com/sivchari/chat-answer/pkg/ulid"
 )
 
@@ -22,14 +23,14 @@ type Interactor interface {
 
 type interactor struct {
 	ulidGenerator     ulid.ULIDGenerator
-	roomRepository    room.Repository
-	messageRepository message.Repository
+	roomRepository    roomrepository.Repository
+	messageRepository messagerepository.Repository
 }
 
 func NewInteractor(
 	ulidGenerator ulid.ULIDGenerator,
-	roomRepository room.Repository,
-	messageRepository message.Repository,
+	roomRepository roomrepository.Repository,
+	messageRepository messagerepository.Repository,
 ) Interactor {
 	return &interactor{
 		ulidGenerator,
@@ -39,6 +40,9 @@ func NewInteractor(
 }
 
 func (i *interactor) CreateRoom(ctx context.Context, name string) (*entity.Room, error) {
+	if name == "" {
+		return nil, errors.New("name is required")
+	}
 	id, err := i.ulidGenerator.Generate()
 	if err != nil {
 		return nil, err
@@ -53,6 +57,18 @@ func (i *interactor) CreateRoom(ctx context.Context, name string) (*entity.Room,
 	return room, nil
 }
 
+func (i *interactor) GetRoom(ctx context.Context, roomID string) (*entity.Room, error) {
+	if roomID == "" {
+		return nil, errors.New("roomID is required")
+	}
+
+	room, err := i.roomRepository.Select(ctx, roomID)
+	if err != nil {
+		return nil, err
+	}
+	return room, nil
+}
+
 func (i *interactor) ListRoom(ctx context.Context) ([]*entity.Room, error) {
 	rooms, err := i.roomRepository.SelectAll(ctx)
 	if err != nil {
@@ -61,19 +77,18 @@ func (i *interactor) ListRoom(ctx context.Context) ([]*entity.Room, error) {
 	return rooms, nil
 }
 
-func (i *interactor) GetRoom(ctx context.Context, id string) (*entity.Room, error) {
-	room, err := i.roomRepository.Select(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	return room, nil
-}
-
-func (i *interactor) GetPass(ctx context.Context) (string, error) {
+func (i *interactor) GetPass(_ context.Context) (string, error) {
 	return i.ulidGenerator.Generate()
 }
 
 func (i *interactor) SendMessage(ctx context.Context, roomID, text string) error {
+	if roomID == "" {
+		return errors.New("roomID is required")
+	}
+	if text == "" {
+		return errors.New("text is required")
+	}
+
 	message := &entity.Message{
 		RoomID: roomID,
 		Text:   text,
@@ -85,6 +100,10 @@ func (i *interactor) SendMessage(ctx context.Context, roomID, text string) error
 }
 
 func (i *interactor) ListMessage(ctx context.Context, roomID string) ([]*entity.Message, error) {
+	if roomID == "" {
+		return nil, errors.New("roomID is required")
+	}
+
 	messages, err := i.messageRepository.SelectByRoomID(ctx, roomID)
 	if err != nil {
 		return nil, err
