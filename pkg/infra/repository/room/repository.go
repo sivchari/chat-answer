@@ -14,7 +14,7 @@ type repository struct {
 	mu      sync.RWMutex
 }
 
-func NewRepository() room.Repository {
+func New() room.Repository {
 	return &repository{
 		mapByID: make(map[string]*entity.Room, 0),
 	}

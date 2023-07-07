@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/bufbuild/connect-go"
+
 	"github.com/sivchari/chat-answer/pkg/errcodes"
 )
 
@@ -14,38 +15,28 @@ func NewErrorInterceptor() *errorInterceptor {
 }
 
 func (i *errorInterceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
-	return connect.UnaryFunc(func(
-		ctx context.Context,
-		req connect.AnyRequest,
-	) (connect.AnyResponse, error) {
+	return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 		res, err := next(ctx, req)
 		if err != nil {
 			return nil, toConnectError(err)
 		}
 		return res, nil
-	})
+	}
 }
 
 func (i *errorInterceptor) WrapStreamingClient(next connect.StreamingClientFunc) connect.StreamingClientFunc {
-	return connect.StreamingClientFunc(func(
-		ctx context.Context,
-		spec connect.Spec,
-	) connect.StreamingClientConn {
+	return func(ctx context.Context, spec connect.Spec) connect.StreamingClientConn {
 		return next(ctx, spec)
-	})
+	}
 }
 
 func (i *errorInterceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc) connect.StreamingHandlerFunc {
-	return connect.StreamingHandlerFunc(func(
-		ctx context.Context,
-		conn connect.StreamingHandlerConn,
-	) error {
-		err := next(ctx, conn)
-		if err != nil {
+	return func(ctx context.Context, conn connect.StreamingHandlerConn) error {
+		if err := next(ctx, conn); err != nil {
 			return toConnectError(err)
 		}
 		return nil
-	})
+	}
 }
 
 func toConnectError(err error) *connect.Error {
