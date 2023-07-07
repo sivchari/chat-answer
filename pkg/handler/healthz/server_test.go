@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sivchari/chat-answer/pkg/log/mock_log"
+	"github.com/sivchari/chat-answer/pkg/xcontext"
 	"github.com/sivchari/chat-answer/proto/proto"
 	"github.com/sivchari/chat-answer/proto/proto/protoconnect"
 )
@@ -30,10 +31,12 @@ func newWithMocks(t *testing.T) (context.Context, protoconnect.HealthzHandler, *
 }
 
 func TestServer_Check(t *testing.T) {
+	userID := "userID"
 	name := "name"
 
 	ctx, s, m := newWithMocks(t)
-	m.logger.EXPECT().InfoCtx(ctx, "healthz check", "name", name)
+	ctx = xcontext.WithValue[xcontext.UserID, string](ctx, userID)
+	m.logger.EXPECT().InfoCtx(ctx, "healthz check", "name", name, "userID", userID)
 
 	res, err := s.Check(ctx, connect.NewRequest(&proto.CheckRequest{
 		Name: name,
