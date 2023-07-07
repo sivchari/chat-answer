@@ -14,80 +14,24 @@ import (
 	"github.com/sivchari/chat-answer/proto/proto/protoconnect"
 )
 
-type server struct {
-	logger          log.Handler
-	chatInteractor  chat.Interactor
-	streamsByRoomID map[string]Streams
-	mu              sync.RWMutex
-}
-
-func New(logger log.Handler, chatInteractor chat.Interactor) protoconnect.ChatServiceHandler {
-	return &server{
-		logger:          logger,
-		chatInteractor:  chatInteractor,
-		streamsByRoomID: make(map[string]Streams, 0),
-	}
-}
-
-type Streams map[string]*Stream
-
 type Stream struct {
 	pbStream *connect.ServerStream[proto.JoinRoomResponse]
 	close    chan struct{}
 }
 
-func (s *server) initStreams(roomID string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	s.streamsByRoomID[roomID] = make(Streams, 0)
+type server struct {
+	logger                  log.Handler
+	chatInteractor          chat.Interactor
+	streamMapByRoomIDAndKey map[string]map[string]*Stream
+	mu                      sync.RWMutex
 }
 
-func (s *server) addStream(roomID string, key string, stream *Stream) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	streams, ok := s.streamsByRoomID[roomID]
-	if !ok {
-		return
+func New(logger log.Handler, chatInteractor chat.Interactor) protoconnect.ChatServiceHandler {
+	return &server{
+		logger:                  logger,
+		chatInteractor:          chatInteractor,
+		streamMapByRoomIDAndKey: make(map[string]map[string]*Stream, 0),
 	}
-
-	streams[key] = stream
-	s.streamsByRoomID[roomID] = streams
-}
-
-func (s *server) deleteStream(roomID, key string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	streams, ok := s.streamsByRoomID[roomID]
-	if !ok {
-		return
-	}
-	delete(streams, key)
-	s.streamsByRoomID[roomID] = streams
-}
-
-func (s *server) getStreams(roomID string) Streams {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	return s.streamsByRoomID[roomID]
-}
-
-func (s *server) existStream(roomID string, key string) bool {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	_, ok := s.streamsByRoomID[roomID][key]
-	return ok
-}
-
-func (s *server) getStream(roomID string, key string) *Stream {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	return s.streamsByRoomID[roomID][key]
 }
 
 func (s *server) CreateRoom(ctx context.Context, req *connect.Request[proto.CreateRoomRequest]) (*connect.Response[proto.CreateRoomResponse], error) {
@@ -96,7 +40,6 @@ func (s *server) CreateRoom(ctx context.Context, req *connect.Request[proto.Crea
 		s.logger.ErrorCtx(ctx, "create room error", "err", err)
 		return nil, err
 	}
-	s.initStreams(room.ID)
 	return connect.NewResponse(&proto.CreateRoomResponse{
 		Id: room.ID,
 	}), nil
@@ -161,7 +104,7 @@ func (s *server) JoinRoom(ctx context.Context, req *connect.Request[proto.JoinRo
 	return nil
 }
 
-func (s *server) LeaveRoom(ctx context.Context, req *connect.Request[proto.LeaveRoomRequest]) (*connect.Response[emptypb.Empty], error) {
+func (s *server) LeaveRoom(_ context.Context, req *connect.Request[proto.LeaveRoomRequest]) (*connect.Response[emptypb.Empty], error) {
 	st := s.getStream(req.Msg.GetRoomId(), req.Msg.GetPass())
 	if st == nil {
 		return &connect.Response[emptypb.Empty]{}, nil
@@ -211,6 +154,45 @@ func (s *server) Chat(ctx context.Context, req *connect.Request[proto.ChatReques
 	return connect.NewResponse(&proto.ChatResponse{
 		Message: req.Msg.GetMessage(),
 	}), nil
+}
+
+func (s *server) addStream(roomID string, key string, stream *Stream) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if _, ok := s.streamMapByRoomIDAndKey[roomID]; !ok {
+		s.streamMapByRoomIDAndKey[roomID] = make(map[string]*Stream, 0)
+	}
+	s.streamMapByRoomIDAndKey[roomID][key] = stream
+}
+
+func (s *server) deleteStream(roomID, key string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	delete(s.streamMapByRoomIDAndKey[roomID], key)
+}
+
+func (s *server) getStreams(roomID string) map[string]*Stream {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	return s.streamMapByRoomIDAndKey[roomID]
+}
+
+func (s *server) existStream(roomID string, key string) bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	_, ok := s.streamMapByRoomIDAndKey[roomID][key]
+	return ok
+}
+
+func (s *server) getStream(roomID string, key string) *Stream {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	return s.streamMapByRoomIDAndKey[roomID][key]
 }
 
 func toProtoRoom(room *entity.Room) *proto.Room {
