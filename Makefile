@@ -19,6 +19,13 @@ buf: ## Generate protobuf codes.
 	docker compose run --rm buf-ts mod update
 	docker compose run --rm buf-ts generate --path proto --template buf.gen.ts.yaml
 
+.PHONY: evans
+evans: ## Run evans.
+	evans --proto ./proto/healthz.proto --port 8080
+
+.PHONY: run ## Serve api and front.
+run: run-api run-front
+
 .PHONY: run-api
 run-api: ## Serve api.
 	docker compose up api -d --build
