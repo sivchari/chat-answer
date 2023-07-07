@@ -15,7 +15,7 @@ type server struct {
 	logger log.Handler
 }
 
-func NewServer(logger log.Handler) protoconnect.HealthzHandler {
+func New(logger log.Handler) protoconnect.HealthzHandler {
 	return &server{
 		logger: logger,
 	}

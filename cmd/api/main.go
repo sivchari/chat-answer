@@ -38,11 +38,11 @@ func run() int {
 	// DI
 	logger := log.NewHandler(log.LevelInfo, log.WithJSONFormat())
 	ulidGenerator := ulid.NewUILDGenerator()
-	roomRepository := roomrepository.NewRepository()
-	messageRepository := messagerepository.NewRepository()
+	roomRepository := roomrepository.New()
+	messageRepository := messagerepository.New()
 	chatInteractor := chatinteractor.NewInteractor(ulidGenerator, roomRepository, messageRepository)
-	healthzServer := healthz.NewServer(logger)
-	chatServer := chat.NewServer(logger, chatInteractor)
+	healthzServer := healthz.New(logger)
+	chatServer := chat.New(logger, chatInteractor)
 
 	mux := http.NewServeMux()
 	mux.Handle(protoconnect.NewHealthzHandler(healthzServer))
