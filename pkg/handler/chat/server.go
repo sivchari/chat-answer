@@ -192,14 +192,6 @@ func (s *server) getStreams(roomID string) map[string]*Stream {
 	return s.streamMapByRoomIDAndKey[roomID]
 }
 
-func (s *server) existStream(roomID string, key string) bool {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	_, ok := s.streamMapByRoomIDAndKey[roomID][key]
-	return ok
-}
-
 func (s *server) getStream(roomID string, key string) *Stream {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
