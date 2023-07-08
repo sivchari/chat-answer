@@ -2,7 +2,6 @@ package room
 
 import (
 	"context"
-	"errors"
 	"sync"
 
 	"github.com/sivchari/chat-answer/pkg/domain/entity"
@@ -33,7 +32,7 @@ func (r *repository) Select(_ context.Context, id string) (*entity.Room, error) 
 
 	room, ok := r.mapByID[id]
 	if !ok {
-		return nil, errors.New("room not found")
+		return &entity.Room{}, nil
 	}
 	return room, nil
 }

@@ -1,15 +1,13 @@
-package errcodes
+package codes
 
 import (
 	"fmt"
-
-	"google.golang.org/grpc/codes"
 )
 
 type Code int
 
 const (
-	CodeUnknown = iota
+	CodeUnknown Code = iota
 	CodeOK
 	CodeInvalidArgument
 	CodeNotFound
@@ -34,20 +32,4 @@ func (c Code) String() string {
 
 func (c Code) GoString() string {
 	return "errcode.Code[" + c.String() + "]"
-}
-
-func (c Code) grpcCode() codes.Code {
-	switch c {
-	case CodeUnknown:
-		return codes.Unknown
-	case CodeInvalidArgument:
-		return codes.InvalidArgument
-	case CodeNotFound:
-		return codes.NotFound
-	case CodeInternal:
-		return codes.Internal
-	case CodeOK:
-		return codes.OK
-	}
-	return codes.Unknown
 }
