@@ -4,11 +4,12 @@ package chat
 
 import (
 	"context"
-	"errors"
 
+	"github.com/sivchari/chat-answer/pkg/codes"
 	"github.com/sivchari/chat-answer/pkg/domain/entity"
 	messagerepository "github.com/sivchari/chat-answer/pkg/domain/repository/message"
 	roomrepository "github.com/sivchari/chat-answer/pkg/domain/repository/room"
+	"github.com/sivchari/chat-answer/pkg/errors"
 	"github.com/sivchari/chat-answer/pkg/ulid"
 )
 
@@ -41,7 +42,7 @@ func NewInteractor(
 
 func (i *interactor) CreateRoom(ctx context.Context, name string) (*entity.Room, error) {
 	if name == "" {
-		return nil, errors.New("name is required")
+		return nil, errors.New(codes.CodeInvalidArgument, "name is required")
 	}
 	id, err := i.ulidGenerator.Generate()
 	if err != nil {
@@ -59,7 +60,7 @@ func (i *interactor) CreateRoom(ctx context.Context, name string) (*entity.Room,
 
 func (i *interactor) GetRoom(ctx context.Context, roomID string) (*entity.Room, error) {
 	if roomID == "" {
-		return nil, errors.New("roomID is required")
+		return nil, errors.New(codes.CodeInvalidArgument, "roomID is required")
 	}
 
 	room, err := i.roomRepository.Select(ctx, roomID)
@@ -87,10 +88,10 @@ func (i *interactor) GetPass(_ context.Context) (string, error) {
 
 func (i *interactor) SendMessage(ctx context.Context, roomID, text string) error {
 	if roomID == "" {
-		return errors.New("roomID is required")
+		return errors.New(codes.CodeInvalidArgument, "roomID is required")
 	}
 	if text == "" {
-		return errors.New("text is required")
+		return errors.New(codes.CodeInvalidArgument, "text is required")
 	}
 
 	message := &entity.Message{
@@ -105,7 +106,7 @@ func (i *interactor) SendMessage(ctx context.Context, roomID, text string) error
 
 func (i *interactor) ListMessage(ctx context.Context, roomID string) ([]*entity.Message, error) {
 	if roomID == "" {
-		return nil, errors.New("roomID is required")
+		return nil, errors.New(codes.CodeInvalidArgument, "roomID is required")
 	}
 
 	messages, err := i.messageRepository.SelectByRoomID(ctx, roomID)

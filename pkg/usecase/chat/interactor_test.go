@@ -2,15 +2,16 @@ package chat
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sivchari/chat-answer/pkg/codes"
 	"github.com/sivchari/chat-answer/pkg/domain/entity"
 	"github.com/sivchari/chat-answer/pkg/domain/repository/message/mock_message"
 	"github.com/sivchari/chat-answer/pkg/domain/repository/room/mock_room"
+	"github.com/sivchari/chat-answer/pkg/errors"
 	"github.com/sivchari/chat-answer/pkg/ulid/mock_ulid"
 )
 
@@ -64,7 +65,8 @@ func TestInteractor_CreateRoom(t *testing.T) {
 
 		res, err := i.CreateRoom(ctx, name)
 		assert.Nil(t, res)
-		assert.Equal(t, errors.New("name is required"), err)
+		assert.Equal(t, errors.Code(err), codes.CodeInvalidArgument)
+		assert.Equal(t, errors.Message(err), "name is required")
 	})
 }
 
@@ -109,7 +111,8 @@ func TestInteractor_GetRoom(t *testing.T) {
 
 		res, err := i.GetRoom(ctx, roomID)
 		assert.Nil(t, res)
-		assert.Equal(t, errors.New("roomID is required"), err)
+		assert.Equal(t, errors.Code(err), codes.CodeInvalidArgument)
+		assert.Equal(t, errors.Message(err), "roomID is required")
 	})
 }
 
@@ -146,7 +149,8 @@ func TestInteractor_SendMessage(t *testing.T) {
 		ctx, i, _ := newWithMocks(t)
 
 		err := i.SendMessage(ctx, roomID, text)
-		assert.Equal(t, errors.New("roomID is required"), err)
+		assert.Equal(t, errors.Code(err), codes.CodeInvalidArgument)
+		assert.Equal(t, errors.Message(err), "roomID is required")
 	})
 
 	t.Run("【異常系】textが空文字列", func(t *testing.T) {
@@ -156,7 +160,8 @@ func TestInteractor_SendMessage(t *testing.T) {
 		ctx, i, _ := newWithMocks(t)
 
 		err := i.SendMessage(ctx, roomID, text)
-		assert.Equal(t, errors.New("text is required"), err)
+		assert.Equal(t, errors.Code(err), codes.CodeInvalidArgument)
+		assert.Equal(t, errors.Message(err), "text is required")
 	})
 }
 
@@ -186,6 +191,7 @@ func TestInteractor_ListMessage(t *testing.T) {
 
 		res, err := i.ListMessage(ctx, roomID)
 		assert.Nil(t, res)
-		assert.Equal(t, errors.New("roomID is required"), err)
+		assert.Equal(t, errors.Code(err), codes.CodeInvalidArgument)
+		assert.Equal(t, errors.Message(err), "roomID is required")
 	})
 }
